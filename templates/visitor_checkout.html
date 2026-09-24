@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Visitor Check Out{% endblock %}
+{% block content %}
+<div class="hero">
+  <div>
+    <div class="kicker">VISITOR SELF-SERVICE</div>
+    <h1>Visitor Check Out</h1>
+    <p>Search your name or select your active visit below.</p>
+  </div>
+  <div class="mode-switch">
+    <a class="mode" href="{{ url_for('register') }}">CHECK IN</a>
+    <a class="mode active" href="{{ url_for('visitor_checkout') }}">CHECK OUT</a>
+  </div>
+</div>
+
+<div class="card checkout-search-card">
+  <form method="post" class="checkout-search">
+    <div class="field grow">
+      <label for="query">Name or Company</label>
+      <input id="query" name="query" value="{{ query }}" placeholder="Search name or company">
+    </div>
+    <button class="primary search-btn" type="submit">Search</button>
+    {% if query %}
+    <a class="secondary clear-btn" href="{{ url_for('visitor_checkout') }}">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="results-title">
+  <h2>Gate In Visitors <span class="count-badge">{{ results|length }}</span></h2>
+  <p>Only visitors who have not checked out are shown.</p>
+</div>
+
+<div class="checkout-results">
+  {% for v in results %}
+  <div class="visitor-result-card">
+    <div class="visitor-main">
+      <div class="avatar">{{ v.visitor_name[:1]|upper }}</div>
+      <div>
+        <h3>{{ v.visitor_name }}</h3>
+        <div class="company">{{ v.company }}</div>
+      </div>
+    </div>
+
+    <div class="visitor-details">
+      <div>
+        <span>Host</span>
+        <strong>{{ v.host_name }}</strong>
+      </div>
+      <div>
+        <span>Purpose</span>
+        <strong>{{ v.purpose }}</strong>
+      </div>
+      <div>
+        <span>Check In</span>
+        <strong>{{ v.check_in_display }}</strong>
+      </div>
+    </div>
+
+    <form method="post"
+          action="{{ url_for('visitor_checkout_confirm', visitor_id=v.id) }}"
+          onsubmit="return confirm('Confirm check-out for {{ v.visitor_name }}?');">
+      <button class="checkout-button" type="submit">Check Out</button>
+    </form>
+  </div>
+  {% else %}
+  <div class="empty-card">No visitors are currently checked in.</div>
+  {% endfor %}
+</div>
+{% endblock %}

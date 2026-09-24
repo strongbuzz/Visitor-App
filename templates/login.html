@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Admin Login{% endblock %}
+{% block content %}
+<div class="login-card">
+  <h1>Admin Login</h1>
+  <p>Enter the administrator password.</p>
+  <form method="post">
+    <div class="field">
+      <label>Password</label>
+      <input type="password" name="password" required autofocus>
+    </div>
+    <button class="primary full-button" type="submit">Login</button>
+  </form>
+</div>
+{% endblock %}

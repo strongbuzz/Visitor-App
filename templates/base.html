@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Visitor Registration{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">FNS</div>
+      <div>
+        <div class="brand-title">Visitor Management</div>
+        <div class="brand-subtitle">Arizona Yard Office</div>
+      </div>
+    </div>
+    <nav>
+      <a href="{{ url_for('register') }}">Check In</a>
+      <a href="{{ url_for('visitor_checkout') }}">Check Out</a>
+      {% if session.get('admin') %}
+        <a href="{{ url_for('admin') }}">Admin</a>
+        <a href="{{ url_for('admin_logout') }}">Logout</a>
+      {% else %}
+        <a href="{{ url_for('admin_login') }}">Admin</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>© {{ current_year }} FNS USA · Internal Visitor Registration</footer>
+</body>
+</html>

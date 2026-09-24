@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Check-out Complete{% endblock %}
+{% block content %}
+<div class="success-card">
+  <div class="success-icon">✓</div>
+  <h1>Check-out Complete</h1>
+  <p><strong>{{ visitor_name }}</strong> from <strong>{{ company }}</strong></p>
+  <p>Your check-out has been recorded.</p>
+  <div class="time-box">{{ check_out }}</div>
+  <p class="thank-you">Thank you for visiting.</p>
+  <a class="button-link" href="{{ url_for('register') }}">Return to Home</a>
+</div>
+<script>
+  setTimeout(() => {
+    window.location.href = "{{ url_for('register') }}";
+  }, 10000);
+</script>
+{% endblock %}

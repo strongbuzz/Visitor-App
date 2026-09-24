@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Visitor Administration{% endblock %}
+{% block content %}
+<div class="admin-head">
+  <div>
+    <div class="kicker">ADMIN</div>
+    <h1>Visitor Management</h1>
+    <p>Search visitor history, check visitors out, and export records.</p>
+  </div>
+</div>
+
+<div class="card filter-card">
+  <form method="get" class="filters">
+    <input name="q" value="{{ q }}" placeholder="Search company, visitor, host, purpose...">
+    <input type="date" name="date_from" value="{{ date_from }}">
+    <input type="date" name="date_to" value="{{ date_to }}">
+
+    <select name="status">
+      <option value="" {% if not status %}selected{% endif %}>All Status</option>
+      <option value="inside" {% if status == 'inside' %}selected{% endif %}>Currently Inside</option>
+      <option value="checked_out" {% if status == 'checked_out' %}selected{% endif %}>Checked Out</option>
+    </select>
+
+    <button class="primary" type="submit">Search</button>
+    <a class="secondary" href="{{ url_for('admin') }}">Reset</a>
+  </form>
+</div>
+
+<div class="table-card">
+  <div class="table-toolbar">
+    <div><strong>{{ visitors|length }}</strong> record(s)</div>
+    <a class="export"
+       href="{{ url_for('export_excel', q=q, date_from=date_from, date_to=date_to, status=status) }}">
+       Export Excel
+    </a>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Visitor</th>
+          <th>Host</th>
+          <th>Host Phone</th>
+          <th>Purpose</th>
+          <th>Check In</th>
+          <th>Check Out</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+      {% for v in visitors %}
+        <tr>
+          <td>{{ v.company }}</td>
+          <td>
+            <strong>{{ v.visitor_name }}</strong>
+            {% if v.comment %}
+              <div class="sub">{{ v.comment }}</div>
+            {% endif %}
+          </td>
+          <td>{{ v.host_name }}</td>
+          <td>{{ v.host_phone or "-" }}</td>
+          <td>{{ v.purpose }}</td>
+          <td>{{ v.check_in_display }}</td>
+          <td>{{ v.check_out_display }}</td>
+          <td>
+            {% if v.check_out %}
+              <span class="status out">Checked Out</span>
+            {% else %}
+              <span class="status in">Inside</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if not v.check_out %}
+            <form method="post"
+                  action="{{ url_for('admin_checkout', visitor_id=v.id) }}"
+                  onsubmit="return confirm('Check this visitor out now?');">
+              <button class="small-btn" type="submit">Check Out</button>
+            </form>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="9" class="empty">No records found.</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

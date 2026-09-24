@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Visitor Check In{% endblock %}
+{% block content %}
+<div class="hero">
+  <div>
+    <div class="kicker">WELCOME</div>
+    <h1>Visitor Registration</h1>
+    <p>Please complete the information below before entering the yard.</p>
+  </div>
+  <div class="mode-switch">
+    <a class="mode active" href="{{ url_for('register') }}">CHECK IN</a>
+    <a class="mode" href="{{ url_for('visitor_checkout') }}">CHECK OUT</a>
+  </div>
+</div>
+
+<div class="card">
+  <form method="post" class="form-grid">
+    <div class="field">
+      <label>Company <span>*</span></label>
+      <input name="company" required placeholder="Company name">
+    </div>
+
+    <div class="field">
+      <label>Visitor Name <span>*</span></label>
+      <input name="visitor_name" required placeholder="Full name">
+    </div>
+
+    <div class="field">
+      <label>Host Name <span>*</span></label>
+      <input name="host_name" required placeholder="Person you are visiting">
+    </div>
+
+    <div class="field">
+      <label>Host Phone #</label>
+      <input name="host_phone" placeholder="e.g. 480-555-1234">
+    </div>
+
+    <div class="field full">
+      <label>Purpose <span>*</span></label>
+      <select name="purpose" required>
+        <option value="">Select purpose</option>
+        <option>Business Meeting</option>
+        <option>Yard Visit</option>
+        <option>Factory / Line Visit</option>
+        <option>Delivery / Pickup</option>
+        <option>Vendor / Maintenance</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>Comment</label>
+      <textarea name="comment" rows="4" placeholder="Additional information"></textarea>
+    </div>
+
+    <div class="safety full">
+      <h3>Safety Guidelines for Yard Visitors</h3>
+      <ul>
+        <li>Safety vest and closed-toe shoes are required inside the yard.</li>
+        <li>Be aware of moving trucks, heavy equipment, and forklifts.</li>
+        <li>Do not approach operating equipment unless instructed.</li>
+        <li>Smoking is not permitted inside the yard.</li>
+        <li>Please dispose of waste properly.</li>
+        <li>Do not use mobile phones while walking in active yard areas.</li>
+      </ul>
+
+      <label class="agree">
+        <input type="checkbox" name="safety_agreed" required>
+        <span>I have read and agree to the Safety Guidelines.</span>
+      </label>
+    </div>
+
+    <div class="actions full">
+      <button class="primary" type="submit">Check In</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
