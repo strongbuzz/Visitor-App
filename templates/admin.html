@@ -41,6 +41,7 @@
         <tr>
           <th>Company</th>
           <th>Visitor</th>
+          <th>Comment</th>
           <th>Host</th>
           <th>Host Phone</th>
           <th>Purpose</th>
@@ -57,11 +58,14 @@
           data-search="{{ (v.company ~ ' ' ~ v.visitor_name ~ ' ' ~ v.host_name ~ ' ' ~ (v.host_phone or '') ~ ' ' ~ v.purpose ~ ' ' ~ (v.comment or ''))|lower }}">
           <td>{{ v.company }}</td>
           <td>
-            <strong>{{ v.visitor_name }}</strong>
-            {% if v.comment %}
-            <div class="sub">{{ v.comment }}</div>
-            {% endif %}
+            <strong style="white-space: nowrap;">
+              {{ v.visitor_name }}
+            </strong>
           </td>
+
+          <td>{{ v.comment or "-" }}</td>
+
+          <td>{{ v.host_name }}</td>
           <td>{{ v.host_name }}</td>
           <td>{{ v.host_phone or "-" }}</td>
           <td>{{ v.purpose }}</td>
@@ -87,7 +91,7 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="9" class="empty">No records found.</td>
+          <td colspan="10" class="empty">No records found.</td>
         </tr>
         {% endfor %}
       </tbody>
