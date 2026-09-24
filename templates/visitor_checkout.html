@@ -16,8 +16,9 @@
 <div class="card checkout-search-card">
   <form method="post" class="checkout-search">
     <div class="field grow">
-      <label for="query">Name or Company</label>
-      <input id="query" name="query" value="{{ query }}" placeholder="Search name or company">
+      <label for="liveSearch">Name or Company</label>
+      <input id="liveSearch" name="query" value="{{ query }}" placeholder="Search name or company..."
+        autocomplete="off">
     </div>
     <button class="primary search-btn" type="submit">Search</button>
     {% if query %}
@@ -33,7 +34,7 @@
 
 <div class="checkout-results">
   {% for v in results %}
-  <div class="visitor-result-card">
+  <div class="visitor-result-card" data-search="{{ (v.visitor_name ~ ' ' ~ v.company)|lower }}">
     <div class="visitor-main">
       <div class="avatar">{{ v.visitor_name[:1]|upper }}</div>
       <div>
@@ -57,9 +58,8 @@
       </div>
     </div>
 
-    <form method="post"
-          action="{{ url_for('visitor_checkout_confirm', visitor_id=v.id) }}"
-          onsubmit="return confirm('Confirm check-out for {{ v.visitor_name }}?');">
+    <form method="post" action="{{ url_for('visitor_checkout_confirm', visitor_id=v.id) }}"
+      onsubmit="return confirm('Confirm check-out for {{ v.visitor_name }}?');">
       <button class="checkout-button" type="submit">Check Out</button>
     </form>
   </div>
@@ -67,4 +67,32 @@
   <div class="empty-card">No visitors are currently checked in.</div>
   {% endfor %}
 </div>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("liveSearch");
+    const cards = document.querySelectorAll(".visitor-result-card");
+    const count = document.querySelector(".count-badge");
+
+    searchInput.addEventListener("input", function () {
+      const keyword = this.value.trim().toLowerCase();
+      let visibleCount = 0;
+
+      cards.forEach(function (card) {
+        const matched = (card.dataset.search || "").includes(keyword);
+
+        card.style.display = matched ? "" : "none";
+
+        if (matched) {
+          visibleCount++;
+        }
+      });
+
+      if (count) {
+        count.textContent = visibleCount;
+      }
+    });
+  });
+</script>
 {% endblock %}

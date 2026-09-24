@@ -11,14 +11,15 @@
 
 <div class="card filter-card">
   <form method="get" class="filters">
-    <input name="q" value="{{ q }}" placeholder="Search company, visitor, host, purpose...">
+    <input id="adminLiveSearch" name="q" value="{{ q }}" placeholder="Search company, visitor, host, purpose..."
+      autocomplete="off">
     <input type="date" name="date_from" value="{{ date_from }}">
     <input type="date" name="date_to" value="{{ date_to }}">
 
     <select name="status">
       <option value="" {% if not status %}selected{% endif %}>All Status</option>
-      <option value="inside" {% if status == 'inside' %}selected{% endif %}>Currently Inside</option>
-      <option value="checked_out" {% if status == 'checked_out' %}selected{% endif %}>Checked Out</option>
+      <option value="inside" {% if status=='inside' %}selected{% endif %}>Currently Inside</option>
+      <option value="checked_out" {% if status=='checked_out' %}selected{% endif %}>Checked Out</option>
     </select>
 
     <button class="primary" type="submit">Search</button>
@@ -28,10 +29,9 @@
 
 <div class="table-card">
   <div class="table-toolbar">
-    <div><strong>{{ visitors|length }}</strong> record(s)</div>
-    <a class="export"
-       href="{{ url_for('export_excel', q=q, date_from=date_from, date_to=date_to, status=status) }}">
-       Export Excel
+    <div><strong id="adminVisibleCount">{{ visitors|length }}</strong> record(s)</div>
+    <a class="export" href="{{ url_for('export_excel', q=q, date_from=date_from, date_to=date_to, status=status) }}">
+      Export Excel
     </a>
   </div>
 
@@ -52,13 +52,14 @@
       </thead>
 
       <tbody>
-      {% for v in visitors %}
-        <tr>
+        {% for v in visitors %}
+        <tr
+          data-search="{{ (v.company ~ ' ' ~ v.visitor_name ~ ' ' ~ v.host_name ~ ' ' ~ (v.host_phone or '') ~ ' ' ~ v.purpose ~ ' ' ~ (v.comment or ''))|lower }}">
           <td>{{ v.company }}</td>
           <td>
             <strong>{{ v.visitor_name }}</strong>
             {% if v.comment %}
-              <div class="sub">{{ v.comment }}</div>
+            <div class="sub">{{ v.comment }}</div>
             {% endif %}
           </td>
           <td>{{ v.host_name }}</td>
@@ -68,30 +69,50 @@
           <td>{{ v.check_out_display }}</td>
           <td>
             {% if v.check_out %}
-              <span class="status out">Checked Out</span>
+            <span class="status out">Checked Out</span>
             {% else %}
-              <span class="status in">Inside</span>
+            <span class="status in">Inside</span>
             {% endif %}
           </td>
           <td>
             {% if not v.check_out %}
-            <form method="post"
-                  action="{{ url_for('admin_checkout', visitor_id=v.id) }}"
-                  onsubmit="return confirm('Check this visitor out now?');">
+            <form method="post" action="{{ url_for('admin_checkout', visitor_id=v.id) }}"
+              onsubmit="return confirm('Check this visitor out now?');">
               <button class="small-btn" type="submit">Check Out</button>
             </form>
             {% else %}
-              -
+            -
             {% endif %}
           </td>
         </tr>
-      {% else %}
+        {% else %}
         <tr>
           <td colspan="9" class="empty">No records found.</td>
         </tr>
-      {% endfor %}
+        {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("adminLiveSearch");
+    const rows = document.querySelectorAll("tbody tr[data-search]");
+    const visibleCount = document.getElementById("adminVisibleCount");
+
+    searchInput.addEventListener("input", function () {
+      const keyword = this.value.trim().toLowerCase();
+
+      let matches = 0;
+      rows.forEach(function (row) {
+        const matched = (row.dataset.search || "").includes(keyword);
+        row.style.display = matched ? "" : "none";
+        if (matched) matches++;
+      });
+      if (visibleCount) visibleCount.textContent = matches;
+    });
+  });
+</script>
 {% endblock %}
