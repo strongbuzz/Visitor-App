@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<style>
+  /* Short, icon-only transition. No extra success card or message. */
+  .auth-transition {
+    position: fixed; inset: 0; z-index: 100;
+    display: grid; place-items: center;
+    background: #f4f3ef;
+    animation: auth-page-fade .2s ease-out both;
+  }
+  .auth-transition__circle {
+    width: 76px; height: 76px; display: grid; place-items: center;
+    border-radius: 50%; background: #e0eee8; color: #17734d;
+    box-shadow: 0 12px 30px rgba(20, 55, 43, .08);
+    animation: auth-pop .48s cubic-bezier(.2, .85, .25, 1.2) both;
+  }
+  .auth-transition__check {
+    width: 38px; height: 38px; fill: none; stroke: currentColor;
+    stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 42; stroke-dashoffset: 42;
+    animation: auth-draw .42s .26s ease-out forwards;
+  }
+  @keyframes auth-page-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes auth-pop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
+  @keyframes auth-draw { to { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .auth-transition, .auth-transition__circle, .auth-transition__check { animation: none; }
+    .auth-transition__check { stroke-dashoffset: 0; }
+  }
+</style>
+<div class="auth-transition" role="status" aria-label="Login successful. Opening admin dashboard.">
+  <div class="auth-transition__circle" aria-hidden="true">
+    <svg class="auth-transition__check" viewBox="0 0 40 40"><path d="M8 21l9 9L33 12"/></svg>
+  </div>
+</div>
+<script>
+  window.setTimeout(() => window.location.replace({{ url_for('admin')|tojson }}),
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1050);
+</script>
+{% endblock %}

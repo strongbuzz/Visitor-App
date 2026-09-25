@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<style>
+  /* Short, icon-only transition. No extra success card or message. */
+  .auth-transition {
+    position: fixed; inset: 0; z-index: 100;
+    display: grid; place-items: center;
+    background: #f4f3ef;
+    animation: auth-page-fade .2s ease-out both;
+  }
+  .auth-transition__circle {
+    width: 76px; height: 76px; display: grid; place-items: center;
+    border-radius: 50%; background: #e6ebee; color: #142b3e;
+    box-shadow: 0 12px 30px rgba(20, 43, 62, .08);
+    animation: auth-pop .48s cubic-bezier(.2, .85, .25, 1.2) both;
+  }
+  .auth-transition__icon {
+    width: 36px; height: 36px; fill: none; stroke: currentColor;
+    stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 78; stroke-dashoffset: 78;
+    animation: auth-draw .5s .18s ease-out forwards;
+  }
+  @keyframes auth-page-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes auth-pop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
+  @keyframes auth-draw { to { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .auth-transition, .auth-transition__circle, .auth-transition__icon { animation: none; }
+    .auth-transition__icon { stroke-dashoffset: 0; }
+  }
+</style>
+<div class="auth-transition" role="status" aria-label="Logged out. Returning to login page.">
+  <div class="auth-transition__circle" aria-hidden="true">
+    <svg class="auth-transition__icon" viewBox="0 0 40 40"><path d="M16 9H9a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h7M22 13l7 7-7 7M13 20h16"/></svg>
+  </div>
+</div>
+<script>
+  window.setTimeout(() => window.location.replace({{ url_for('admin_login')|tojson }}),
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1050);
+</script>
+{% endblock %}

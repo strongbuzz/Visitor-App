@@ -19,7 +19,6 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import PyMongoError
 
-
 # ---------------------------------------------------------
 # App / environment setup
 # ---------------------------------------------------------
@@ -101,6 +100,7 @@ def serialize_visitor(doc):
         "host_phone": doc.get("host_phone", ""),
         "purpose": doc.get("purpose", ""),
         "comment": doc.get("comment", ""),
+        "checkout_comment": doc.get("checkout_comment", ""),
         "safety_agreed": bool(doc.get("safety_agreed", False)),
         "check_in": doc.get("check_in"),
         "check_out": doc.get("check_out"),
@@ -122,6 +122,7 @@ def build_admin_filter(q="", date_from="", date_to="", status=""):
                     {"host_phone": {"$regex": q, "$options": "i"}},
                     {"purpose": {"$regex": q, "$options": "i"}},
                     {"comment": {"$regex": q, "$options": "i"}},
+                    {"checkout_comment": {"$regex": q, "$options": "i"}},
                 ]
             }
         )
@@ -263,9 +264,7 @@ def visitor_checkout_confirm(visitor_id):
         return redirect(url_for("visitor_checkout"))
 
     try:
-        visitor = visitors_collection.find_one(
-            {"_id": object_id, "check_out": None}
-        )
+        visitor = visitors_collection.find_one({"_id": object_id, "check_out": None})
 
         if not visitor:
             flash(
@@ -275,11 +274,18 @@ def visitor_checkout_confirm(visitor_id):
             return redirect(url_for("visitor_checkout"))
 
         now = datetime.now()
+        checkout_comment = request.form.get("checkout_comment", "").strip()[:1000]
 
-        visitors_collection.update_one(
+        result = visitors_collection.update_one(
             {"_id": object_id, "check_out": None},
-            {"$set": {"check_out": now}},
+            {"$set": {
+                "check_out": now,
+                "checkout_comment": checkout_comment,
+            }},
         )
+        if not result.modified_count:
+            flash("This visitor has already checked out.", "error")
+            return redirect(url_for("visitor_checkout"))
     except PyMongoError as exc:
         app.logger.exception("MongoDB checkout update failed")
         flash(f"Could not complete check-out: {exc}", "error")
@@ -307,7 +313,7 @@ def admin_login():
 
         flash("Incorrect password.", "error")
 
-    return render_template("login.html")
+    return render_template("login.html", login_error=request.method == "POST")
 
 
 @app.route("/admin/logout")
@@ -399,9 +405,7 @@ def export_excel():
     mongo_filter = build_admin_filter(q, date_from, date_to, status)
 
     try:
-        docs = list(
-            visitors_collection.find(mongo_filter).sort("check_in", DESCENDING)
-        )
+        docs = list(visitors_collection.find(mongo_filter).sort("check_in", DESCENDING))
     except PyMongoError as exc:
         app.logger.exception("MongoDB export query failed")
         flash(f"Could not export visitor records: {exc}", "error")
@@ -419,6 +423,7 @@ def export_excel():
         "Host Phone",
         "Purpose",
         "Comment",
+        "Check Out Comment / Issue",
         "Safety Agreed",
         "Check In Date",
         "Check In Time",
@@ -442,6 +447,7 @@ def export_excel():
                 doc.get("host_phone", ""),
                 doc.get("purpose", ""),
                 doc.get("comment", ""),
+                doc.get("checkout_comment", ""),
                 "Yes" if doc.get("safety_agreed") else "No",
                 export_date(doc.get("check_in")),
                 export_time(doc.get("check_in")),
@@ -458,11 +464,12 @@ def export_excel():
         "E": 18,
         "F": 24,
         "G": 36,
-        "H": 16,
+        "H": 40,
         "I": 16,
         "J": 16,
         "K": 16,
         "L": 16,
+        "M": 16,
     }
 
     for col, width in widths.items():
@@ -495,9 +502,7 @@ if __name__ == "__main__":
     except Exception as exc:
         print("\nMongoDB connection failed.")
         print(exc)
-        print(
-            "\nCheck MONGO_URI in your .env file and Atlas Network Access settings."
-        )
+        print("\nCheck MONGO_URI in your .env file and Atlas Network Access settings.")
         raise
 
     app.run(host="0.0.0.0", port=5000, debug=True)

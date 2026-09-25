@@ -544,3 +544,29 @@ body.premium-ui {
     scroll-behavior: auto !important
   }
 }
+
+/* Admin login and dashboard: subtle fade without an extra success screen. */
+.premium-ui #app-main:has(#adminVisibleCount),
+.premium-ui #app-main:has(input[name="password"]) {
+  animation: admin-soft-enter 480ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes admin-soft-enter {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .premium-ui #app-main:has(#adminVisibleCount),
+  .premium-ui #app-main:has(input[name="password"]) {
+    animation: none !important;
+  }
+}

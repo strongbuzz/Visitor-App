@@ -1,30 +1,286 @@
 {% extends "base.html" %}
 {% block title %}Visitor Check Out{% endblock %}
 {% block content %}
+<style>
+  /* Only the Check Out visitor cards. Keep the existing FNS premium theme. */
+  #checkoutResults .checkout-card {
+    display: block !important;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  #checkoutResults .checkout-card-top {
+    display: grid !important;
+    grid-template-columns: minmax(185px, 1.05fr) minmax(0, 2.1fr) auto;
+    gap: clamp(14px, 2vw, 26px);
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+  }
+
+  #checkoutResults .checkout-card-person {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-width: 0;
+  }
+
+  #checkoutResults .checkout-card-person h3 {
+    margin: 0;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  #checkoutResults .checkout-card-person p {
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+  }
+
+  #checkoutResults .checkout-card-details {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(8px, 1.4vw, 18px);
+    min-width: 0;
+    margin: 0;
+  }
+
+  #checkoutResults .checkout-card-details>div {
+    min-width: 0;
+  }
+
+  #checkoutResults .checkout-card-details dt {
+    font-size: 11px;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    color: #87939c;
+  }
+
+  #checkoutResults .checkout-card-details dd {
+    margin-top: 5px;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.5;
+    color: #3f525f;
+    overflow-wrap: anywhere;
+  }
+
+  #checkoutResults .checkout-expand-button {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    min-width: 116px;
+    min-height: 44px;
+    padding: 11px 18px;
+    border: 0;
+    border-radius: 5px;
+    background: #9e4544 !important;
+    color: #fff !important;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 750;
+    transition: background .18s ease;
+  }
+
+  #checkoutResults .checkout-expand-button:hover {
+    background: #823534 !important;
+  }
+
+  #checkoutResults .checkout-expand-button:focus-visible {
+    outline: 2px solid #9e4544;
+    outline-offset: 3px;
+  }
+
+  #checkoutResults .checkout-issue-panel[hidden] {
+    display: none !important;
+  }
+
+  #checkoutResults .checkout-issue-panel {
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e6ebed;
+  }
+
+  #checkoutResults .checkout-issue-panel form {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  #checkoutResults .checkout-issue-panel label {
+    font-size: 13px !important;
+    font-weight: 750 !important;
+    letter-spacing: 0 !important;
+    color: #324453;
+  }
+
+  #checkoutResults .checkout-issue-panel label span {
+    font-weight: 450;
+    color: #7a8994;
+  }
+
+  #checkoutResults .checkout-issue-panel textarea {
+    box-sizing: border-box;
+    display: block;
+    width: 100% !important;
+    min-width: 0;
+    min-height: 104px;
+    padding: 13px 14px;
+    resize: vertical;
+    font-size: 14px;
+  }
+
+  #checkoutResults .checkout-issue-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  #checkoutResults .checkout-confirm-button {
+    min-width: 168px;
+    cursor: pointer;
+  }
+
+  @media(max-width:850px) {
+    #checkoutResults .checkout-card-top {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+    }
+
+    #checkoutResults .checkout-card-details {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    #checkoutResults .checkout-expand-button {
+      grid-column: 2;
+      grid-row: 1;
+    }
+  }
+
+  @media(max-width:480px) {
+    #checkoutResults .checkout-card-top {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    #checkoutResults .checkout-expand-button {
+      grid-column: 1;
+      grid-row: 3;
+      width: 100%;
+    }
+
+    #checkoutResults .checkout-card-details {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    #checkoutResults .checkout-confirm-button {
+      width: 100%;
+    }
+  }
+</style>
+
 <div class="mb-7 flex flex-col justify-between gap-6 md:flex-row md:items-center">
-  <div><p class="mb-1 text-xs font-extrabold tracking-[.18em] text-sky-700">VISITOR SELF-SERVICE</p><h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Visitor Check Out</h1><p class="mt-2 text-sm leading-relaxed text-slate-500">Search your name or select your active visit below.</p></div>
-  <div class="visit-switch relative isolate flex w-full max-w-[300px] shrink-0 rounded-2xl border border-slate-200 bg-slate-100 p-1 shadow-inner sm:w-[300px]" data-current-mode="out" aria-label="Visitor registration mode">
-  <div class="visit-slider pointer-events-none absolute top-1 bottom-1 left-1 z-0 w-[calc(50%-4px)] rounded-xl bg-[#003A70] shadow-[0_4px_14px_rgba(0,58,112,.2)]" aria-hidden="true"></div>
-  <a data-mode="in" href="{{ url_for('register') }}" class="visit-tab relative z-10 flex-1 rounded-xl px-3 py-3 text-center text-xs font-bold tracking-wide sm:text-sm" >CHECK IN</a>
-  <a data-mode="out" href="{{ url_for('visitor_checkout') }}" class="visit-tab relative z-10 flex-1 rounded-xl px-3 py-3 text-center text-xs font-bold tracking-wide sm:text-sm" aria-current="page">CHECK OUT</a>
+  <div>
+    <p class="mb-1 text-xs font-extrabold tracking-[.18em] text-sky-700">VISITOR SELF-SERVICE</p>
+    <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Visitor Check Out</h1>
+    <p class="mt-2 text-sm leading-relaxed text-slate-500">Search your name or select your active visit below.</p>
+  </div>
+  <div
+    class="visit-switch relative isolate flex w-full max-w-[300px] shrink-0 rounded-2xl border border-slate-200 bg-slate-100 p-1 shadow-inner sm:w-[300px]"
+    data-current-mode="out" aria-label="Visitor registration mode">
+    <div
+      class="visit-slider pointer-events-none absolute top-1 bottom-1 left-1 z-0 w-[calc(50%-4px)] rounded-xl bg-[#003A70] shadow-[0_4px_14px_rgba(0,58,112,.2)]"
+      aria-hidden="true"></div>
+    <a data-mode="in" href="{{ url_for('register') }}"
+      class="visit-tab relative z-10 flex-1 rounded-xl px-3 py-3 text-center text-xs font-bold tracking-wide sm:text-sm">CHECK
+      IN</a>
+    <a data-mode="out" href="{{ url_for('visitor_checkout') }}"
+      class="visit-tab relative z-10 flex-1 rounded-xl px-3 py-3 text-center text-xs font-bold tracking-wide sm:text-sm"
+      aria-current="page">CHECK OUT</a>
+  </div>
 </div>
-</div>
-<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(31,48,76,.06)] sm:p-8 mb-7 !p-5">
+<section
+  class="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(31,48,76,.06)] sm:p-8 mb-7 !p-5">
   <form method="post" class="flex flex-col items-end gap-3 sm:flex-row">
-    <div class="w-full flex-1"><label for="liveSearch" class="mb-2 block text-sm font-bold text-slate-700">Name or Company</label><input id="liveSearch" name="query" value="{{ query }}" class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" placeholder="Search name or company..." autocomplete="off"></div>
-    <button class="inline-flex items-center justify-center rounded-xl bg-[#003A70] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#002B5C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#003A70] w-full sm:w-auto" type="submit">Search All</button>
-    {% if query %}<a class="inline-flex items-center justify-center rounded-xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 w-full sm:w-auto" href="{{ url_for('visitor_checkout') }}">Clear</a>{% endif %}
+    <div class="w-full flex-1"><label for="liveSearch" class="mb-2 block text-sm font-bold text-slate-700">Name or
+        Company</label><input id="liveSearch" name="query" value="{{ query }}"
+        class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100"
+        placeholder="Search name or company..." autocomplete="off"></div>
+    <button
+      class="inline-flex items-center justify-center rounded-xl bg-[#003A70] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#002B5C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#003A70] w-full sm:w-auto"
+      type="submit">Search All</button>
+    {% if query %}<a
+      class="inline-flex items-center justify-center rounded-xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 w-full sm:w-auto"
+      href="{{ url_for('visitor_checkout') }}">Clear</a>{% endif %}
   </form>
 </section>
-<div class="mb-4"><h2 class="text-xl font-extrabold text-slate-900">Gate In Visitors <span id="visitorCount" class="ml-1 rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-[#003A70]">{{ results|length }}</span></h2><p class="mt-1 text-sm text-slate-500">Only visitors who have not checked out are shown.</p></div>
-<div class="grid gap-4" id="checkoutResults">
-{% for v in results %}
-  <article class="visitor-result-card flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center" data-search="{{ (v.visitor_name ~ ' ' ~ v.company)|lower }}">
-    <div class="flex min-w-0 items-center gap-3 lg:w-[27%]"><div class="grid size-12 shrink-0 place-items-center rounded-full bg-sky-100 text-xl font-extrabold text-[#003A70]">{{ v.visitor_name[:1]|upper }}</div><div class="min-w-0"><h3 class="break-words text-lg font-extrabold text-slate-900">{{ v.visitor_name }}</h3><p class="text-sm text-slate-500">{{ v.company }}</p></div></div>
-    <dl class="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-3"><div><dt class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Host</dt><dd class="mt-1 text-sm font-semibold text-slate-700">{{ v.host_name }}</dd></div><div><dt class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Purpose</dt><dd class="mt-1 text-sm font-semibold text-slate-700">{{ v.purpose }}</dd></div><div><dt class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Check In</dt><dd class="mt-1 text-sm font-semibold text-slate-700">{{ v.check_in_display }}</dd></div></dl>
-    <form method="post" action="{{ url_for('visitor_checkout_confirm', visitor_id=v.id) }}" onsubmit="return confirm('Confirm check-out for this visitor?');"><button class="inline-flex w-full justify-center whitespace-nowrap rounded-xl bg-rose-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-rose-700 lg:w-auto" type="submit">Check Out</button></form>
-  </article>
-{% else %}<div class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">No visitors are currently checked in.</div>{% endfor %}
+<div class="mb-4">
+  <h2 class="text-xl font-extrabold text-slate-900">Gate In Visitors <span id="visitorCount"
+      class="ml-1 rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-[#003A70]">{{ results|length }}</span></h2>
+  <p class="mt-1 text-sm text-slate-500">Only visitors who have not checked out are shown.</p>
 </div>
-<div id="checkoutNoMatch" class="mt-4 hidden rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">No matching visitors in the loaded list. Use Search All to search the database.</div>
+<div class="grid gap-4" id="checkoutResults">
+  {% for v in results %}
+  <article class="visitor-result-card checkout-card rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+    data-search="{{ (v.visitor_name ~ ' ' ~ v.company)|lower }}">
+    <!-- Preserve the original horizontal visitor layout and red Check Out button. -->
+    <div class="checkout-card-top">
+      <div class="checkout-card-person">
+        <div
+          class="grid size-12 shrink-0 place-items-center rounded-full bg-sky-100 text-xl font-extrabold text-[#003A70]">
+          {{ v.visitor_name[:1]|upper }}
+        </div>
+        <div class="min-w-0">
+          <h3 class="break-words text-lg font-extrabold text-slate-900">{{ v.visitor_name }}</h3>
+          <p class="text-sm text-slate-500">{{ v.company }}</p>
+        </div>
+      </div>
+      <dl class="checkout-card-details">
+        <div>
+          <dt>Host</dt>
+          <dd>{{ v.host_name }}</dd>
+        </div>
+        <div>
+          <dt>Purpose</dt>
+          <dd>{{ v.purpose }}</dd>
+        </div>
+        <div>
+          <dt>Check In</dt>
+          <dd>{{ v.check_in_display }}</dd>
+        </div>
+      </dl>
+      <button type="button" class="checkout-expand-button bg-rose-600" aria-expanded="false"
+        aria-controls="checkout-panel-{{ v.id }}"
+        onclick="const panel = document.getElementById('checkout-panel-{{ v.id }}'); const opening = panel.hidden; panel.hidden = !opening; this.setAttribute('aria-expanded', String(opening)); this.textContent = opening ? 'Close' : 'Check Out';">
+        Check Out
+      </button>
+    </div>
+    <!-- This expands BELOW the visitor row, never inside its narrow button column. -->
+    <div id="checkout-panel-{{ v.id }}" class="checkout-issue-panel" hidden>
+      <form method="post" action="{{ url_for('visitor_checkout_confirm', visitor_id=v.id) }}"
+        onsubmit="return confirm('Confirm check-out for this visitor?');">
+        <label for="checkout-comment-{{ v.id }}">Comment / Issue <span>(Optional)</span></label>
+        <textarea id="checkout-comment-{{ v.id }}" name="checkout_comment" rows="3" maxlength="1000"
+          placeholder="Any issues or additional comments..."></textarea>
+        <div class="checkout-issue-actions">
+          <button type="submit" class="checkout-confirm-button">Confirm Check Out</button>
+        </div>
+      </form>
+    </div>
+  </article>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">No
+    visitors are currently checked in.</div>
+  {% endfor %}
+</div>
+<div id="checkoutNoMatch"
+  class="mt-4 hidden rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+  No matching visitors in the loaded list. Use Search All to search the database.</div>
 {% endblock %}
