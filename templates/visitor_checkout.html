@@ -1,98 +1,30 @@
 {% extends "base.html" %}
 {% block title %}Visitor Check Out{% endblock %}
 {% block content %}
-<div class="hero">
-  <div>
-    <div class="kicker">VISITOR SELF-SERVICE</div>
-    <h1>Visitor Check Out</h1>
-    <p>Search your name or select your active visit below.</p>
-  </div>
-  <div class="mode-switch">
-    <a class="mode" href="{{ url_for('register') }}">CHECK IN</a>
-    <a class="mode active" href="{{ url_for('visitor_checkout') }}">CHECK OUT</a>
-  </div>
+<div class="mb-7 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+  <div><p class="mb-1 text-xs font-extrabold tracking-[.18em] text-sky-700">VISITOR SELF-SERVICE</p><h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Visitor Check Out</h1><p class="mt-2 text-sm leading-relaxed text-slate-500">Search your name or select your active visit below.</p></div>
+  <div class="visit-switch relative isolate flex w-full max-w-[300px] shrink-0 rounded-2xl border border-slate-200 bg-slate-100 p-1 shadow-inner sm:w-[300px]" data-current-mode="out" aria-label="Visitor registration mode">
+  <div class="visit-slider pointer-events-none absolute top-1 bottom-1 left-1 z-0 w-[calc(50%-4px)] rounded-xl bg-[#003A70] shadow-[0_4px_14px_rgba(0,58,112,.2)]" aria-hidden="true"></div>
+  <a data-mode="in" href="{{ url_for('register') }}" class="visit-tab relative z-10 flex-1 rounded-xl px-3 py-3 text-center text-xs font-bold tracking-wide sm:text-sm" >CHECK IN</a>
+  <a data-mode="out" href="{{ url_for('visitor_checkout') }}" class="visit-tab relative z-10 flex-1 rounded-xl px-3 py-3 text-center text-xs font-bold tracking-wide sm:text-sm" aria-current="page">CHECK OUT</a>
 </div>
-
-<div class="card checkout-search-card">
-  <form method="post" class="checkout-search">
-    <div class="field grow">
-      <label for="liveSearch">Name or Company</label>
-      <input id="liveSearch" name="query" value="{{ query }}" placeholder="Search name or company..."
-        autocomplete="off">
-    </div>
-    <button class="primary search-btn" type="submit">Search</button>
-    {% if query %}
-    <a class="secondary clear-btn" href="{{ url_for('visitor_checkout') }}">Clear</a>
-    {% endif %}
+</div>
+<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(31,48,76,.06)] sm:p-8 mb-7 !p-5">
+  <form method="post" class="flex flex-col items-end gap-3 sm:flex-row">
+    <div class="w-full flex-1"><label for="liveSearch" class="mb-2 block text-sm font-bold text-slate-700">Name or Company</label><input id="liveSearch" name="query" value="{{ query }}" class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" placeholder="Search name or company..." autocomplete="off"></div>
+    <button class="inline-flex items-center justify-center rounded-xl bg-[#003A70] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#002B5C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#003A70] w-full sm:w-auto" type="submit">Search All</button>
+    {% if query %}<a class="inline-flex items-center justify-center rounded-xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 w-full sm:w-auto" href="{{ url_for('visitor_checkout') }}">Clear</a>{% endif %}
   </form>
+</section>
+<div class="mb-4"><h2 class="text-xl font-extrabold text-slate-900">Gate In Visitors <span id="visitorCount" class="ml-1 rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-[#003A70]">{{ results|length }}</span></h2><p class="mt-1 text-sm text-slate-500">Only visitors who have not checked out are shown.</p></div>
+<div class="grid gap-4" id="checkoutResults">
+{% for v in results %}
+  <article class="visitor-result-card flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center" data-search="{{ (v.visitor_name ~ ' ' ~ v.company)|lower }}">
+    <div class="flex min-w-0 items-center gap-3 lg:w-[27%]"><div class="grid size-12 shrink-0 place-items-center rounded-full bg-sky-100 text-xl font-extrabold text-[#003A70]">{{ v.visitor_name[:1]|upper }}</div><div class="min-w-0"><h3 class="break-words text-lg font-extrabold text-slate-900">{{ v.visitor_name }}</h3><p class="text-sm text-slate-500">{{ v.company }}</p></div></div>
+    <dl class="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-3"><div><dt class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Host</dt><dd class="mt-1 text-sm font-semibold text-slate-700">{{ v.host_name }}</dd></div><div><dt class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Purpose</dt><dd class="mt-1 text-sm font-semibold text-slate-700">{{ v.purpose }}</dd></div><div><dt class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Check In</dt><dd class="mt-1 text-sm font-semibold text-slate-700">{{ v.check_in_display }}</dd></div></dl>
+    <form method="post" action="{{ url_for('visitor_checkout_confirm', visitor_id=v.id) }}" onsubmit="return confirm('Confirm check-out for this visitor?');"><button class="inline-flex w-full justify-center whitespace-nowrap rounded-xl bg-rose-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-rose-700 lg:w-auto" type="submit">Check Out</button></form>
+  </article>
+{% else %}<div class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">No visitors are currently checked in.</div>{% endfor %}
 </div>
-
-<div class="results-title">
-  <h2>Gate In Visitors <span class="count-badge">{{ results|length }}</span></h2>
-  <p>Only visitors who have not checked out are shown.</p>
-</div>
-
-<div class="checkout-results">
-  {% for v in results %}
-  <div class="visitor-result-card" data-search="{{ (v.visitor_name ~ ' ' ~ v.company)|lower }}">
-    <div class="visitor-main">
-      <div class="avatar">{{ v.visitor_name[:1]|upper }}</div>
-      <div>
-        <h3>{{ v.visitor_name }}</h3>
-        <div class="company">{{ v.company }}</div>
-      </div>
-    </div>
-
-    <div class="visitor-details">
-      <div>
-        <span>Host</span>
-        <strong>{{ v.host_name }}</strong>
-      </div>
-      <div>
-        <span>Purpose</span>
-        <strong>{{ v.purpose }}</strong>
-      </div>
-      <div>
-        <span>Check In</span>
-        <strong>{{ v.check_in_display }}</strong>
-      </div>
-    </div>
-
-    <form method="post" action="{{ url_for('visitor_checkout_confirm', visitor_id=v.id) }}"
-      onsubmit="return confirm('Confirm check-out for {{ v.visitor_name }}?');">
-      <button class="checkout-button" type="submit">Check Out</button>
-    </form>
-  </div>
-  {% else %}
-  <div class="empty-card">No visitors are currently checked in.</div>
-  {% endfor %}
-</div>
-
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const searchInput = document.getElementById("liveSearch");
-    const cards = document.querySelectorAll(".visitor-result-card");
-    const count = document.querySelector(".count-badge");
-
-    searchInput.addEventListener("input", function () {
-      const keyword = this.value.trim().toLowerCase();
-      let visibleCount = 0;
-
-      cards.forEach(function (card) {
-        const matched = (card.dataset.search || "").includes(keyword);
-
-        card.style.display = matched ? "" : "none";
-
-        if (matched) {
-          visibleCount++;
-        }
-      });
-
-      if (count) {
-        count.textContent = visibleCount;
-      }
-    });
-  });
-</script>
+<div id="checkoutNoMatch" class="mt-4 hidden rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">No matching visitors in the loaded list. Use Search All to search the database.</div>
 {% endblock %}

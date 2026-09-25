@@ -1,49 +1,57 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Visitor Registration{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <title>{% block title %}Visitor Management{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='tailwind.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='premium.css') }}">
+  <script src="{{ url_for('static', filename='visitor.js') }}" defer></script>
+  <style>
+    /* Instant tab switching; doesn't require rebuilding Tailwind. */
+    .visit-slider { transition: transform 320ms cubic-bezier(.22,1,.36,1); }
+    .visit-switch[data-current-mode="out"] .visit-slider { transform: translateX(100%); }
+    .visit-switch[data-current-mode="in"] .visit-tab[data-mode="in"],
+    .visit-switch[data-current-mode="out"] .visit-tab[data-mode="out"] { color: #fff; }
+    .visit-switch[data-current-mode="in"] .visit-tab[data-mode="out"],
+    .visit-switch[data-current-mode="out"] .visit-tab[data-mode="in"] { color: #64748b; }
+    .visit-tab { transition: color 220ms ease; }
+    .visit-tab:focus-visible { outline: 2px solid #0369a1; outline-offset: 3px; }
+    #app-main.switch-enter { animation: visit-enter 230ms ease-out; }
+    @keyframes visit-enter { from { opacity:.65; transform: translateY(5px); } to { opacity:1; transform:translateY(0); } }
+    @media (prefers-reduced-motion: reduce) {
+      .visit-slider, .visit-tab { transition: none; }
+      #app-main.switch-enter { animation: none; }
+    }
+  </style>
 </head>
-
-<body>
-  <header class="topbar">
-    <a href="{{ url_for('register') }}" class="brand">
-      <div class="brand-mark">FNS</div>
-      <div>
-        <div class="brand-title">Visitor Management</div>
-        <div class="brand-subtitle">Arizona Yard Office</div>
-      </div>
-    </a>
-    <nav>
-      <a href="{{ url_for('register') }}">Check In</a>
-      <a href="{{ url_for('visitor_checkout') }}">Check Out</a>
-      {% if session.get('admin') %}
-      <a href="{{ url_for('admin') }}">Admin</a>
-      <a href="{{ url_for('admin_logout') }}">Logout</a>
-      {% else %}
-      <a href="{{ url_for('admin_login') }}">Admin</a>
-      {% endif %}
-    </nav>
-  </header>
-
-  <main class="page">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="flash-wrap">
-      {% for category, message in messages %}
-      <div class="flash {{ category }}">{{ message }}</div>
-      {% endfor %}
+<body class="premium-ui min-h-screen font-sans antialiased">
+  <header class="site-header sticky top-0 z-30">
+    <div class="site-header-inner mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-3 sm:px-8">
+      <a href="{{ url_for('register') }}" class="site-brand flex items-center gap-3 no-underline" aria-label="FNS Visitor Management home">
+        <span class="brand-monogram" aria-hidden="true">FNS</span>
+        <span class="brand-copy"><strong>VISITOR MANAGEMENT</strong><small>ARIZONA YARD OFFICE</small></span>
+      </a>
+      <nav class="site-nav flex flex-wrap items-center gap-2" aria-label="Main navigation">
+        <a href="{{ url_for('register') }}">Check In</a>
+        <a href="{{ url_for('visitor_checkout') }}">Check Out</a>
+        {% if session.get('admin') %}
+          <a href="{{ url_for('admin') }}">Admin</a>
+          <a href="{{ url_for('admin_logout') }}">Logout</a>
+        {% else %}
+          <a href="{{ url_for('admin_login') }}">Admin</a>
+        {% endif %}
+      </nav>
     </div>
-    {% endif %}
+  </header>
+  <main id="app-main" class="mx-auto w-full max-w-7xl px-4 pb-12 pt-8 sm:px-7 sm:pt-10">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<div class="mb-5 space-y-2" role="status">{% for category, message in messages %}
+        <div class="rounded-xl border px-4 py-3 text-sm font-semibold {{ 'border-red-200 bg-red-50 text-red-800' if category == 'error' else 'border-emerald-200 bg-emerald-50 text-emerald-800' }}">{{ message }}</div>
+      {% endfor %}</div>{% endif %}
     {% endwith %}
-
     {% block content %}{% endblock %}
   </main>
-
-  <footer>© {{ current_year }} FNS USA · Internal Visitor Registration</footer>
+  <footer class="site-footer pb-7 text-center text-xs">FNS USA <span aria-hidden="true">/</span> ARIZONA YARD OFFICE <span aria-hidden="true">/</span> VISITOR MANAGEMENT</footer>
 </body>
-
 </html>

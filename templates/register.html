@@ -1,78 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Visitor Check In{% endblock %}
 {% block content %}
-<div class="hero">
-  <div>
-    <div class="kicker">WELCOME</div>
-    <h1>Visitor Registration</h1>
-    <p>Please complete the information below before entering the yard.</p>
-  </div>
-  <div class="mode-switch">
-    <a class="mode active" href="{{ url_for('register') }}">CHECK IN</a>
-    <a class="mode" href="{{ url_for('visitor_checkout') }}">CHECK OUT</a>
-  </div>
+<div class="mb-7 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+  <div><p class="mb-1 text-xs font-extrabold tracking-[.18em] text-sky-700">WELCOME</p><h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Visitor Registration</h1><p class="mt-2 text-sm leading-relaxed text-slate-500">Please complete the information below before entering the yard.</p></div>
+  <div class="visit-switch relative isolate flex w-full max-w-[300px] shrink-0 rounded-2xl border border-slate-200 bg-slate-100 p-1 shadow-inner sm:w-[300px]" data-current-mode="in" aria-label="Visitor registration mode">
+  <div class="visit-slider pointer-events-none absolute top-1 bottom-1 left-1 z-0 w-[calc(50%-4px)] rounded-xl bg-[#003A70] shadow-[0_4px_14px_rgba(0,58,112,.2)]" aria-hidden="true"></div>
+  <a data-mode="in" href="{{ url_for('register') }}" class="visit-tab relative z-10 flex-1 rounded-xl px-3 py-3 text-center text-xs font-bold tracking-wide sm:text-sm" aria-current="page">CHECK IN</a>
+  <a data-mode="out" href="{{ url_for('visitor_checkout') }}" class="visit-tab relative z-10 flex-1 rounded-xl px-3 py-3 text-center text-xs font-bold tracking-wide sm:text-sm" >CHECK OUT</a>
 </div>
-
-<div class="card">
-  <form method="post" class="form-grid">
-    <div class="field">
-      <label>Company <span>*</span></label>
-      <input name="company" required placeholder="Company name">
-    </div>
-
-    <div class="field">
-      <label>Visitor Name <span>*</span></label>
-      <input name="visitor_name" required placeholder="Full name">
-    </div>
-
-    <div class="field">
-      <label>Host Name <span>*</span></label>
-      <input name="host_name" required placeholder="Person you are visiting">
-    </div>
-
-    <div class="field">
-      <label>Host Phone #</label>
-      <input name="host_phone" placeholder="e.g. 480-555-1234">
-    </div>
-
-    <div class="field full">
-      <label>Purpose <span>*</span></label>
-      <select name="purpose" required>
-        <option value="">Select purpose</option>
-        <option>Business Meeting</option>
-        <option>Yard Visit</option>
-        <option>Factory / Line Visit</option>
-        <option>Delivery / Pickup</option>
-        <option>Vendor / Maintenance</option>
-        <option>Other</option>
-      </select>
-    </div>
-
-    <div class="field full">
-      <label>Comment</label>
-      <textarea name="comment" rows="4" placeholder="Additional information"></textarea>
-    </div>
-
-    <div class="safety full">
-      <h3>Safety Guidelines for Yard Visitors</h3>
-      <ul>
-        <li>Safety vest and closed-toe shoes are required inside the yard.</li>
-        <li>Be aware of moving trucks, heavy equipment, and forklifts.</li>
-        <li>Do not approach operating equipment unless instructed.</li>
-        <li>Smoking is not permitted inside the yard.</li>
-        <li>Please dispose of waste properly.</li>
-        <li>Do not use mobile phones while walking in active yard areas.</li>
-      </ul>
-
-      <label class="agree">
-        <input type="checkbox" name="safety_agreed" required>
-        <span>I have read and agree to the Safety Guidelines.</span>
-      </label>
-    </div>
-
-    <div class="actions full">
-      <button class="primary" type="submit">Check In</button>
-    </div>
+</div>
+<div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(31,48,76,.06)] sm:p-8">
+  <form method="post" class="grid gap-5 md:grid-cols-2">
+    <div><label for="company" class="mb-2 block text-sm font-bold text-slate-700">Company <span class="text-red-600">*</span></label><input id="company" class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" name="company" required placeholder="Company name"></div>
+    <div><label for="visitor_name" class="mb-2 block text-sm font-bold text-slate-700">Visitor Name <span class="text-red-600">*</span></label><input id="visitor_name" class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" name="visitor_name" required placeholder="Full name"></div>
+    <div><label for="host_name" class="mb-2 block text-sm font-bold text-slate-700">Host Name <span class="text-red-600">*</span></label><input id="host_name" class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" name="host_name" required placeholder="Person you are visiting"></div>
+    <div><label for="host_phone" class="mb-2 block text-sm font-bold text-slate-700">Host Phone #</label><input id="host_phone" class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" name="host_phone" placeholder="e.g. 480-555-1234"></div>
+    <div class="md:col-span-2"><label for="purpose" class="mb-2 block text-sm font-bold text-slate-700">Purpose <span class="text-red-600">*</span></label><select id="purpose" class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" name="purpose" required><option value="">Select purpose</option><option>Business Meeting</option><option>Yard Visit</option><option>Factory / Line Visit</option><option>Delivery / Pickup</option><option>Vendor / Maintenance</option><option>Other</option></select></div>
+    <div class="md:col-span-2"><label for="comment" class="mb-2 block text-sm font-bold text-slate-700">Comment</label><textarea id="comment" class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" name="comment" rows="3" placeholder="Additional information"></textarea></div>
+    <section class="rounded-2xl border border-sky-100 bg-sky-50/70 p-5 md:col-span-2" aria-labelledby="safety-title"><h2 id="safety-title" class="text-base font-bold text-slate-800">Safety Guidelines for Yard Visitors</h2>
+      <ul class="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed text-slate-600"><li>Safety vest and closed-toe shoes are required inside the yard.</li><li>Be aware of moving trucks, heavy equipment, and forklifts.</li><li>Do not approach operating equipment unless instructed.</li><li>Smoking is not permitted inside the yard.</li><li>Please dispose of waste properly.</li><li>Do not use mobile phones while walking in active yard areas.</li></ul>
+      <label class="mt-5 flex cursor-pointer items-start gap-3 border-t border-sky-100 pt-4 text-sm font-bold text-slate-700"><input class="mt-1 size-4 accent-[#003A70]" type="checkbox" name="safety_agreed" required><span>I have read and agree to the Safety Guidelines.</span></label>
+    </section>
+    <div class="flex justify-end md:col-span-2"><button class="inline-flex items-center justify-center rounded-xl bg-[#003A70] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#002B5C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#003A70] min-w-36" type="submit">Check In</button></div>
   </form>
 </div>
 {% endblock %}

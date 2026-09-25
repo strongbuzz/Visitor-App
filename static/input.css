@@ -1,0 +1,15 @@
+@import "tailwindcss";
+@source "../templates";
+@source "./visitor.js";
+
+/* The two pages retain their independent Flask routes. This small component handles the
+   cross-page slider animation; layout, spacing, typography and colors use Tailwind utilities. */
+.visit-tab { color: #64748b; transition: color .28s ease; }
+.visit-tab[aria-current="page"], .visit-tab[data-animated-active="true"] { color: #fff; }
+.visit-switch .visit-slider { transform: translateX(0); transition: transform .38s cubic-bezier(.22,1,.36,1); }
+.visit-switch[data-current-mode="out"] .visit-slider { transform: translateX(100%); }
+.visit-switch[data-animating="out"] .visit-slider { transform: translateX(100%); }
+.visit-switch[data-animating="in"] .visit-slider { transform: translateX(0); }
+@media (prefers-reduced-motion: reduce) {
+  .visit-tab, .visit-switch .visit-slider { transition-duration: 0ms !important; }
+}

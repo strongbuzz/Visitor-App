@@ -1,122 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Visitor Administration{% endblock %}
 {% block content %}
-<div class="admin-head">
-  <div>
-    <div class="kicker">ADMIN</div>
-    <h1>Visitor Management</h1>
-    <p>Search visitor history, check visitors out, and export records.</p>
-  </div>
-</div>
+<div class="mb-6"><p class="text-xs font-extrabold tracking-[.18em] text-sky-700">ADMIN</p><h1 class="mt-1 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Visitor Management</h1><p class="mt-2 text-sm text-slate-500">Search visitor history, check visitors out, and export records.</p></div>
 
-<div class="card filter-card">
-  <form method="get" class="filters">
-    <input id="adminLiveSearch" name="q" value="{{ q }}" placeholder="Search company, visitor, host, purpose..."
-      autocomplete="off">
-    <input type="date" name="date_from" value="{{ date_from }}">
-    <input type="date" name="date_to" value="{{ date_to }}">
-
-    <select name="status">
-      <option value="" {% if not status %}selected{% endif %}>All Status</option>
-      <option value="inside" {% if status=='inside' %}selected{% endif %}>Currently Inside</option>
-      <option value="checked_out" {% if status=='checked_out' %}selected{% endif %}>Checked Out</option>
-    </select>
-
-    <button class="primary" type="submit">Search</button>
-    <a class="secondary" href="{{ url_for('admin') }}">Reset</a>
-  </form>
-</div>
-
-<div class="table-card">
-  <div class="table-toolbar">
-    <div><strong id="adminVisibleCount">{{ visitors|length }}</strong> record(s)</div>
-    <a class="export" href="{{ url_for('export_excel', q=q, date_from=date_from, date_to=date_to, status=status) }}">
-      Export Excel
-    </a>
-  </div>
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Company</th>
-          <th>Visitor</th>
-          <th>Comment</th>
-          <th>Host</th>
-          <th>Host Phone</th>
-          <th>Purpose</th>
-          <th>Check In</th>
-          <th>Check Out</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {% for v in visitors %}
-        <tr
-          data-search="{{ (v.company ~ ' ' ~ v.visitor_name ~ ' ' ~ v.host_name ~ ' ' ~ (v.host_phone or '') ~ ' ' ~ v.purpose ~ ' ' ~ (v.comment or ''))|lower }}">
-          <td>{{ v.company }}</td>
-          <td>
-            <strong style="white-space: nowrap;">
-              {{ v.visitor_name }}
-            </strong>
-          </td>
-
-          <td>{{ v.comment or "-" }}</td>
-
-          <td>{{ v.host_name }}</td>
-          <td>{{ v.host_name }}</td>
-          <td>{{ v.host_phone or "-" }}</td>
-          <td>{{ v.purpose }}</td>
-          <td>{{ v.check_in_display }}</td>
-          <td>{{ v.check_out_display }}</td>
-          <td>
-            {% if v.check_out %}
-            <span class="status out">Checked Out</span>
-            {% else %}
-            <span class="status in">Inside</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if not v.check_out %}
-            <form method="post" action="{{ url_for('admin_checkout', visitor_id=v.id) }}"
-              onsubmit="return confirm('Check this visitor out now?');">
-              <button class="small-btn" type="submit">Check Out</button>
-            </form>
-            {% else %}
-            -
-            {% endif %}
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="10" class="empty">No records found.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const searchInput = document.getElementById("adminLiveSearch");
-    const rows = document.querySelectorAll("tbody tr[data-search]");
-    const visibleCount = document.getElementById("adminVisibleCount");
-
-    searchInput.addEventListener("input", function () {
-      const keyword = this.value.trim().toLowerCase();
-
-      let matches = 0;
-      rows.forEach(function (row) {
-        const matched = (row.dataset.search || "").includes(keyword);
-        row.style.display = matched ? "" : "none";
-        if (matched) matches++;
-      });
-      if (visibleCount) visibleCount.textContent = matches;
-    });
-  });
-</script>
+<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(31,48,76,.06)] sm:p-8 mb-5 !p-5"><form method="get" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(180px,2fr)_repeat(3,minmax(110px,1fr))_auto_auto] lg:items-end">
+  <div><label class="mb-2 block text-sm font-bold text-slate-700" for="adminLiveSearch">Search records</label><input class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" id="adminLiveSearch" name="q" value="{{ q }}" placeholder="Company, visitor, host..." autocomplete="off"></div>
+  <div><label class="mb-2 block text-sm font-bold text-slate-700" for="date_from">From</label><input class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" id="date_from" type="date" name="date_from" value="{{ date_from }}"></div>
+  <div><label class="mb-2 block text-sm font-bold text-slate-700" for="date_to">To</label><input class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" id="date_to" type="date" name="date_to" value="{{ date_to }}"></div>
+  <div><label class="mb-2 block text-sm font-bold text-slate-700" for="status">Status</label><select class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-600 focus:ring-4 focus:ring-sky-100" id="status" name="status"><option value="" {% if not status %}selected{% endif %}>All Status</option><option value="inside" {% if status=='inside' %}selected{% endif %}>Currently Inside</option><option value="checked_out" {% if status=='checked_out' %}selected{% endif %}>Checked Out</option></select></div>
+  <button class="inline-flex items-center justify-center rounded-xl bg-[#003A70] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#002B5C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#003A70] w-full" type="submit">Search All</button><a class="inline-flex items-center justify-center rounded-xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 w-full" href="{{ url_for('admin') }}">Reset</a>
+</form></section>
+<section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4"><div class="text-sm text-slate-600"><strong id="adminVisibleCount" class="text-[#003A70]">{{ visitors|length }}</strong> record(s)</div><a class="inline-flex items-center rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-800 transition hover:bg-emerald-100" href="{{ url_for('export_excel', q=q, date_from=date_from, date_to=date_to, status=status) }}">Export Excel</a></div>
+  <div class="overflow-x-auto"><table class="min-w-[1180px] w-full border-collapse text-left text-sm"><thead class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"><tr>{% for h in ['Company','Visitor','Comment','Host','Host Phone','Purpose','Check In','Check Out','Status','Action'] %}<th class="whitespace-nowrap border-b border-slate-200 px-4 py-4 font-bold">{{ h }}</th>{% endfor %}</tr></thead>
+  <tbody class="divide-y divide-slate-100">
+  {% for v in visitors %}
+    <tr class="admin-record transition hover:bg-slate-50" data-search="{{ (v.company ~ ' ' ~ v.visitor_name ~ ' ' ~ v.host_name ~ ' ' ~ (v.host_phone or '') ~ ' ' ~ v.purpose ~ ' ' ~ (v.comment or ''))|lower }}">
+      <td class="px-4 py-4">{{ v.company }}</td><td class="whitespace-nowrap px-4 py-4 font-bold text-slate-900">{{ v.visitor_name }}</td><td class="max-w-[250px] break-words px-4 py-4 text-slate-600">{{ v.comment or '-' }}</td><td class="px-4 py-4">{{ v.host_name }}</td><td class="whitespace-nowrap px-4 py-4">{{ v.host_phone or '-' }}</td><td class="px-4 py-4">{{ v.purpose }}</td><td class="whitespace-nowrap px-4 py-4 text-slate-600">{{ v.check_in_display }}</td><td class="whitespace-nowrap px-4 py-4 text-slate-600">{{ v.check_out_display }}</td>
+      <td class="px-4 py-4">{% if v.check_out %}<span class="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">Checked Out</span>{% else %}<span class="whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">Inside</span>{% endif %}</td>
+      <td class="px-4 py-4">{% if not v.check_out %}<form method="post" action="{{ url_for('admin_checkout', visitor_id=v.id) }}" onsubmit="return confirm('Check this visitor out now?');"><button class="whitespace-nowrap rounded-lg bg-sky-50 px-3 py-2 text-xs font-bold text-sky-800 hover:bg-sky-100" type="submit">Check Out</button></form>{% else %}—{% endif %}</td>
+    </tr>
+  {% else %}<tr><td class="px-4 py-12 text-center text-slate-500" colspan="10">No records found.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+<p class="mt-3 text-xs text-slate-400">Typing filters the currently loaded rows. Use Search All to query the database and date/status filters.</p>
 {% endblock %}
