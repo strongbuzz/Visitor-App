@@ -13,6 +13,56 @@ document.addEventListener('DOMContentLoaded', () => {
     const loading = {};
     let navigationToken = 0;
 
+    // Smooth wheel scrolling on desktop. Keep native touch scrolling and reduced-motion behavior.
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let smoothScroll = null;
+    if (!prefersReducedMotion.matches && typeof window.Lenis === 'function') {
+        try {
+            smoothScroll = new window.Lenis({
+                duration: 1.05,
+                smoothWheel: true,
+                smoothTouch: false,
+                wheelMultiplier: 0.85,
+                touchMultiplier: 1
+            });
+            const scrollFrame = time => {
+                smoothScroll.raf(time);
+                requestAnimationFrame(scrollFrame);
+            };
+            requestAnimationFrame(scrollFrame);
+        } catch (error) {
+            // CDN/runtime issues should never block visitor check-in or check-out.
+            smoothScroll = null;
+        }
+    }
+
+    // Reveal only specifically marked elements; no JS or reduced motion = instantly visible.
+    const revealObserver = !prefersReducedMotion.matches && 'IntersectionObserver' in window
+        ? new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.06, rootMargin: '0px 0px -24px 0px' })
+        : null;
+
+    function initializeReveals(container) {
+        container.querySelectorAll('[data-scroll-reveal]').forEach(el => {
+            if (el.classList.contains('is-visible')) return;
+            if (!revealObserver) {
+                el.classList.remove('scroll-reveal-ready');
+                el.classList.add('is-visible');
+                return;
+            }
+            // Mark before observing so the reveal animates only when in view.
+            el.classList.add('scroll-reveal-ready');
+            revealObserver.observe(el);
+        });
+    }
+    if (main) initializeReveals(main);
+
     // Parse ONLY the body of our own two registration routes, never execute fetched scripts.
     async function loadScreen(mode, force = false) {
         if (!paths?.[mode]) throw new Error('Route missing');
@@ -55,7 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
         void main.offsetWidth;
         main.classList.add('switch-enter');
         document.title = mode === 'in' ? 'Visitor Check In' : 'Visitor Check Out';
-        window.scrollTo({ top: 0, behavior: 'instant' });
+        if (smoothScroll) smoothScroll.scrollTo(0, { immediate: true });
+        else window.scrollTo(0, 0);
+        initializeReveals(main);
     }
 
     async function navigate(mode, pushHistory = true) {

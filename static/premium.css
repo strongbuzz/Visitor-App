@@ -651,3 +651,30 @@ body.premium-ui {
     transition: none !important;
   }
 }
+
+
+/* Optional smooth scrolling: the Lenis script handles wheel inertia. */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+/* Scroll reveal is opt-in only after JS initializes each element. */
+.premium-ui [data-scroll-reveal].scroll-reveal-ready {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition: opacity 720ms ease, transform 720ms cubic-bezier(.22,1,.36,1);
+  will-change: opacity, transform;
+}
+.premium-ui [data-scroll-reveal].scroll-reveal-ready.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  will-change: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .premium-ui [data-scroll-reveal].scroll-reveal-ready {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    will-change: auto !important;
+  }
+}
