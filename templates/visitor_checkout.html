@@ -93,17 +93,56 @@
     outline-offset: 3px;
   }
 
-  #checkoutResults .checkout-issue-panel[hidden] {
-    display: none !important;
-  }
-
+  /* Keep the original card layout. Animate only the issue section below it. */
   #checkoutResults .checkout-issue-panel {
-    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
     min-width: 0;
     width: 100%;
+    margin-top: 0;
+    transition:
+      grid-template-rows 420ms cubic-bezier(.22, 1, .36, 1),
+      opacity 290ms ease,
+      margin-top 420ms cubic-bezier(.22, 1, .36, 1),
+      visibility 420ms;
+  }
+
+  #checkoutResults .checkout-issue-panel.is-open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
     margin-top: 20px;
-    padding-top: 20px;
+    transition:
+      grid-template-rows 420ms cubic-bezier(.22, 1, .36, 1),
+      opacity 320ms ease 60ms,
+      margin-top 420ms cubic-bezier(.22, 1, .36, 1),
+      visibility 0s;
+  }
+
+  #checkoutResults .checkout-issue-inner {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #checkoutResults .checkout-issue-content {
+    padding: 22px 0 2px;
     border-top: 1px solid #e6ebed;
+    transform: translateY(-8px);
+    transition: transform 420ms cubic-bezier(.22, 1, .36, 1);
+  }
+
+  #checkoutResults .checkout-issue-panel.is-open .checkout-issue-content {
+    transform: translateY(0);
+  }
+
+  @media(prefers-reduced-motion: reduce) {
+
+    #checkoutResults .checkout-issue-panel,
+    #checkoutResults .checkout-issue-content {
+      transition: none !important;
+    }
   }
 
   #checkoutResults .checkout-issue-panel form {
@@ -258,21 +297,29 @@
       </dl>
       <button type="button" class="checkout-expand-button bg-rose-600" aria-expanded="false"
         aria-controls="checkout-panel-{{ v.id }}"
-        onclick="const panel = document.getElementById('checkout-panel-{{ v.id }}'); const opening = panel.hidden; panel.hidden = !opening; this.setAttribute('aria-expanded', String(opening)); this.textContent = opening ? 'Close' : 'Check Out';">
+        onclick="const panel = document.getElementById('checkout-panel-{{ v.id }}'); const opening = !panel.classList.contains('is-open'); panel.classList.toggle('is-open', opening); panel.setAttribute('aria-hidden', String(!opening)); panel.querySelector('.checkout-issue-inner').inert = !opening; this.setAttribute('aria-expanded', String(opening)); this.textContent = opening ? 'Close' : 'Check Out';">
         Check Out
       </button>
     </div>
     <!-- This expands BELOW the visitor row, never inside its narrow button column. -->
-    <div id="checkout-panel-{{ v.id }}" class="checkout-issue-panel" hidden>
-      <form method="post" action="{{ url_for('visitor_checkout_confirm', visitor_id=v.id) }}"
-        onsubmit="return confirm('Confirm check-out for this visitor?');">
-        <label for="checkout-comment-{{ v.id }}">Comment / Issue <span>(Optional)</span></label>
-        <textarea id="checkout-comment-{{ v.id }}" name="checkout_comment" rows="3" maxlength="1000"
-          placeholder="Any issues or additional comments..."></textarea>
-        <div class="checkout-issue-actions">
-          <button type="submit" class="checkout-confirm-button">Confirm Check Out</button>
+    <div id="checkout-panel-{{ v.id }}" class="checkout-issue-panel" aria-hidden="true">
+      <div class="checkout-issue-inner" inert>
+        <div class="checkout-issue-content">
+          <form method="post" action="{{ url_for('visitor_checkout_confirm', visitor_id=v.id) }}"
+            onsubmit="return confirm('Confirm check-out for this visitor?');">
+            <div class="checkout-issue-heading">
+              <label for="checkout-comment-{{ v.id }}">Comment / Issue</label>
+              <span class="checkout-issue-optional">OPTIONAL</span>
+            </div>
+            <p class="checkout-issue-hint">Record any comments or issues before completing check-out.</p>
+            <textarea id="checkout-comment-{{ v.id }}" name="checkout_comment" rows="3" maxlength="1000"
+              placeholder="Enter comments or issues, if any..."></textarea>
+            <div class="checkout-issue-actions">
+              <button type="submit" class="checkout-confirm-button">Confirm Check Out</button>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   </article>
   {% else %}
