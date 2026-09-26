@@ -575,22 +575,18 @@ body.premium-ui {
 .premium-ui #checkoutResults .checkout-expand-button {
   transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
-
 .premium-ui #checkoutResults .checkout-expand-button:active {
   transform: scale(.975);
 }
-
 .premium-ui #checkoutResults .checkout-issue-content {
   border-top-color: #e1e7e7;
 }
-
 .premium-ui #checkoutResults .checkout-issue-heading {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
-
 .premium-ui #checkoutResults .checkout-issue-heading label {
   margin: 0;
   color: #1d384a;
@@ -598,7 +594,6 @@ body.premium-ui {
   font-weight: 750 !important;
   letter-spacing: -.015em !important;
 }
-
 .premium-ui #checkoutResults .checkout-issue-optional {
   display: inline-flex;
   align-items: center;
@@ -611,14 +606,12 @@ body.premium-ui {
   font-weight: 800;
   letter-spacing: .09em;
 }
-
 .premium-ui #checkoutResults .checkout-issue-hint {
   margin: -4px 0 2px;
   color: #73838d;
   font-size: 12px;
   line-height: 1.5;
 }
-
 .premium-ui #checkoutResults .checkout-issue-panel textarea {
   min-height: 106px;
   padding: 14px 15px;
@@ -629,13 +622,11 @@ body.premium-ui {
   line-height: 1.55;
   transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
-
 .premium-ui #checkoutResults .checkout-issue-panel textarea:focus {
   background: #fff !important;
   border-color: #35759a !important;
   box-shadow: 0 0 0 3px #35759a18 !important;
 }
-
 .premium-ui #checkoutResults .checkout-confirm-button {
   min-height: 43px;
   padding: 12px 21px;
@@ -648,17 +639,13 @@ body.premium-ui {
   letter-spacing: .025em;
   transition: background 180ms ease, transform 180ms ease;
 }
-
 .premium-ui #checkoutResults .checkout-confirm-button:hover {
   background: #24485f;
 }
-
 .premium-ui #checkoutResults .checkout-confirm-button:active {
   transform: scale(.985);
 }
-
 @media (prefers-reduced-motion: reduce) {
-
   .premium-ui #checkoutResults .checkout-expand-button,
   .premium-ui #checkoutResults .checkout-confirm-button {
     transition: none !important;
