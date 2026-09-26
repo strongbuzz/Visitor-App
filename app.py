@@ -209,7 +209,7 @@ def register():
             return render_template("register.html")
 
         return render_template(
-            "success.html",
+            "checkin_success.html",
             visitor_name=visitor_name,
             check_in=now.strftime("%Y-%m-%d %H:%M"),
         )
