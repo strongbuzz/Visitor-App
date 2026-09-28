@@ -227,7 +227,7 @@
 
 <div class="mb-7 flex flex-col justify-between gap-6 md:flex-row md:items-center">
   <div>
-    <p class="mb-1 text-xs font-extrabold tracking-[.18em] text-sky-700">VISITOR SELF-SERVICE</p>
+    <p class="mb-1 text-xs font-extrabold tracking-[.18em] text-sky-700">{{ current_site.name|upper }} · VISITOR SELF-SERVICE</p>
     <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Visitor Check Out</h1>
     <p class="mt-2 text-sm leading-relaxed text-slate-500">Search your name or select your active visit below.</p>
   </div>
@@ -237,10 +237,10 @@
     <div
       class="visit-slider pointer-events-none absolute top-1 bottom-1 left-1 z-0 w-[calc(50%-4px)] rounded-xl bg-[#003A70] shadow-[0_4px_14px_rgba(0,58,112,.2)]"
       aria-hidden="true"></div>
-    <a data-mode="in" href="{{ url_for('register') }}"
+    <a data-mode="in" href="{{ url_for('register', site_slug=current_site.slug) }}"
       class="visit-tab relative z-10 flex-1 rounded-xl px-3 py-3 text-center text-xs font-bold tracking-wide sm:text-sm">CHECK
       IN</a>
-    <a data-mode="out" href="{{ url_for('visitor_checkout') }}"
+    <a data-mode="out" href="{{ url_for('visitor_checkout', site_slug=current_site.slug) }}"
       class="visit-tab relative z-10 flex-1 rounded-xl px-3 py-3 text-center text-xs font-bold tracking-wide sm:text-sm"
       aria-current="page">CHECK OUT</a>
   </div>
@@ -257,7 +257,7 @@
       type="submit">Search All</button>
     {% if query %}<a
       class="inline-flex items-center justify-center rounded-xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 w-full sm:w-auto"
-      href="{{ url_for('visitor_checkout') }}">Clear</a>{% endif %}
+      href="{{ url_for('visitor_checkout', site_slug=current_site.slug) }}">Clear</a>{% endif %}
   </form>
 </section>
 <div class="mb-4">
@@ -305,7 +305,7 @@
     <div id="checkout-panel-{{ v.id }}" class="checkout-issue-panel" aria-hidden="true">
       <div class="checkout-issue-inner" inert>
         <div class="checkout-issue-content">
-          <form method="post" action="{{ url_for('visitor_checkout_confirm', visitor_id=v.id) }}"
+          <form method="post" action="{{ url_for('visitor_checkout_confirm', site_slug=current_site.slug, visitor_id=v.id) }}"
             onsubmit="return confirm('Confirm check-out for this visitor?');">
             <div class="checkout-issue-heading">
               <label for="checkout-comment-{{ v.id }}">Comment / Issue</label>

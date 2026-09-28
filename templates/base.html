@@ -30,13 +30,13 @@
 <body class="premium-ui min-h-screen font-sans antialiased">
   <header class="site-header sticky top-0 z-30">
     <div class="site-header-inner mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-3 sm:px-8">
-      <a href="{{ url_for('register') }}" class="site-brand flex items-center gap-3 no-underline" aria-label="FNS Visitor Management home">
+      <a href="{{ url_for('register', site_slug=current_site.slug) if current_site else url_for('register') }}" class="site-brand flex items-center gap-3 no-underline" aria-label="FNS Visitor Management home">
         <span class="brand-monogram" aria-hidden="true">FNS</span>
-        <span class="brand-copy"><strong>VISITOR MANAGEMENT</strong><small>ARIZONA YARD OFFICE</small></span>
+        <span class="brand-copy"><strong>VISITOR MANAGEMENT</strong><small>{{ current_site.name|upper if current_site else 'MULTI-SITE VISITOR SYSTEM' }}</small></span>
       </a>
       <nav class="site-nav flex flex-wrap items-center gap-2" aria-label="Main navigation">
-        <a href="{{ url_for('register') }}">Check In</a>
-        <a href="{{ url_for('visitor_checkout') }}">Check Out</a>
+        <a href="{{ url_for('register', site_slug=current_site.slug) if current_site else url_for('register') }}">Check In</a>
+        <a href="{{ url_for('visitor_checkout', site_slug=current_site.slug) if current_site else url_for('visitor_checkout') }}">Check Out</a>
         {% if session.get('admin') %}
           <a href="{{ url_for('admin') }}">Admin</a>
           <a href="{{ url_for('admin_logout') }}">Logout</a>
@@ -54,6 +54,6 @@
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
-  <footer class="site-footer pb-7 text-center text-xs">FNS USA <span aria-hidden="true">/</span> ARIZONA YARD OFFICE <span aria-hidden="true">/</span> VISITOR MANAGEMENT</footer>
+  <footer class="site-footer pb-7 text-center text-xs">FNS USA <span aria-hidden="true">/</span> {{ current_site.name|upper if current_site else "MULTI-SITE" }} <span aria-hidden="true">/</span> VISITOR MANAGEMENT</footer>
 </body>
 </html>

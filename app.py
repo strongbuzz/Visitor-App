@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime, timedelta
 from io import BytesIO
 
@@ -6,6 +7,7 @@ from bson import ObjectId
 from dotenv import load_dotenv
 from flask import (
     Flask,
+    abort,
     flash,
     redirect,
     render_template,
@@ -33,6 +35,10 @@ MONGO_URI = os.getenv("MONGO_URI", "").strip()
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "VisitorDB")
 MONGO_COLLECTION_NAME = os.getenv("MONGO_COLLECTION_NAME", "visitors")
 
+# Existing records created before Multi-Site are treated as this site.
+DEFAULT_SITE_NAME = os.getenv("DEFAULT_SITE_NAME", "Arizona Yard Office")
+DEFAULT_SITE_SLUG = os.getenv("DEFAULT_SITE_SLUG", "arizona-yard-office")
+
 if not MONGO_URI:
     raise RuntimeError(
         "MONGO_URI is not configured. "
@@ -42,6 +48,7 @@ if not MONGO_URI:
 mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
 db = mongo_client[MONGO_DB_NAME]
 visitors_collection = db[MONGO_COLLECTION_NAME]
+sites_collection = db["sites"]
 
 
 def verify_mongodb():
@@ -55,10 +62,132 @@ def ensure_indexes():
     visitors_collection.create_index([("check_out", ASCENDING)])
     visitors_collection.create_index([("visitor_name", ASCENDING)])
     visitors_collection.create_index([("company", ASCENDING)])
+    visitors_collection.create_index([("site_slug", ASCENDING)])
+    sites_collection.create_index([("slug", ASCENDING)], unique=True)
+    sites_collection.create_index([("active", ASCENDING), ("name", ASCENDING)])
 
 
 # ---------------------------------------------------------
-# Helper functions
+# Site helpers
+# ---------------------------------------------------------
+def slugify_site(value):
+    """Convert a friendly site name into a URL-safe slug."""
+    value = (value or "").strip().lower()
+    value = re.sub(r"[^a-z0-9]+", "-", value)
+    return value.strip("-")
+
+
+def serialize_site(doc):
+    if not doc:
+        return None
+    return {
+        "id": str(doc["_id"]),
+        "name": doc.get("name", ""),
+        "slug": doc.get("slug", ""),
+        "active": bool(doc.get("active", True)),
+        "created_at": doc.get("created_at"),
+    }
+
+
+def ensure_default_site():
+    """
+    Create the current Arizona Yard Office site once.
+    This also makes old visitor records (without site_slug) belong to the default site.
+    """
+    site = sites_collection.find_one({"slug": DEFAULT_SITE_SLUG})
+    if site:
+        return site
+
+    now = datetime.now()
+    try:
+        sites_collection.insert_one(
+            {
+                "name": DEFAULT_SITE_NAME,
+                "slug": DEFAULT_SITE_SLUG,
+                "active": True,
+                "created_at": now,
+            }
+        )
+    except PyMongoError:
+        # Another process may have created it at the same time.
+        pass
+
+    return sites_collection.find_one({"slug": DEFAULT_SITE_SLUG})
+
+
+def get_site_by_slug(site_slug, active_only=True):
+    if not site_slug:
+        return None
+    mongo_filter = {"slug": site_slug}
+    if active_only:
+        mongo_filter["active"] = True
+    return sites_collection.find_one(mongo_filter)
+
+
+def get_current_site():
+    """Resolve the site for legacy '/' or '/checkout' visits."""
+    ensure_default_site()
+
+    last_slug = session.get("last_site_slug")
+    if last_slug:
+        site = get_site_by_slug(last_slug, active_only=True)
+        if site:
+            return site
+
+    default_site = get_site_by_slug(DEFAULT_SITE_SLUG, active_only=True)
+    if default_site:
+        return default_site
+
+    site = sites_collection.find_one({"active": True}, sort=[("name", ASCENDING)])
+    if site:
+        return site
+
+    # Defensive fallback: there should always be at least one active site.
+    default_site = ensure_default_site()
+    if default_site and not default_site.get("active", True):
+        sites_collection.update_one(
+            {"_id": default_site["_id"]},
+            {"$set": {"active": True}},
+        )
+        default_site["active"] = True
+    return default_site
+
+
+def require_public_site(site_slug):
+    site = get_site_by_slug(site_slug, active_only=True)
+    if not site:
+        abort(404)
+    session["last_site_slug"] = site["slug"]
+    return site
+
+
+def site_visitor_filter(site):
+    """
+    Filter visitors to one site.
+    Old records without site_slug are treated as Arizona Yard Office.
+    """
+    if site["slug"] == DEFAULT_SITE_SLUG:
+        return {
+            "$or": [
+                {"site_slug": DEFAULT_SITE_SLUG},
+                {"site_slug": {"$exists": False}},
+                {"site_slug": None},
+            ]
+        }
+    return {"site_slug": site["slug"]}
+
+
+def combine_filters(*parts):
+    clean = [part for part in parts if part]
+    if not clean:
+        return {}
+    if len(clean) == 1:
+        return clean[0]
+    return {"$and": clean}
+
+
+# ---------------------------------------------------------
+# General helpers
 # ---------------------------------------------------------
 def admin_required():
     return session.get("admin") is True
@@ -92,6 +221,9 @@ def export_time(value):
 
 def serialize_visitor(doc):
     """Prepare MongoDB document for Jinja templates."""
+    site_slug = doc.get("site_slug") or DEFAULT_SITE_SLUG
+    site_name = doc.get("site_name") or DEFAULT_SITE_NAME
+
     return {
         "id": str(doc["_id"]),
         "company": doc.get("company", ""),
@@ -102,6 +234,8 @@ def serialize_visitor(doc):
         "comment": doc.get("comment", ""),
         "checkout_comment": doc.get("checkout_comment", ""),
         "safety_agreed": bool(doc.get("safety_agreed", False)),
+        "site_slug": site_slug,
+        "site_name": site_name,
         "check_in": doc.get("check_in"),
         "check_out": doc.get("check_out"),
         "check_in_display": display_datetime(doc.get("check_in")),
@@ -109,7 +243,7 @@ def serialize_visitor(doc):
     }
 
 
-def build_admin_filter(q="", date_from="", date_to="", status=""):
+def build_admin_filter(q="", date_from="", date_to="", status="", site_slug=""):
     filters = []
 
     if q:
@@ -123,6 +257,7 @@ def build_admin_filter(q="", date_from="", date_to="", status=""):
                     {"purpose": {"$regex": q, "$options": "i"}},
                     {"comment": {"$regex": q, "$options": "i"}},
                     {"checkout_comment": {"$regex": q, "$options": "i"}},
+                    {"site_name": {"$regex": q, "$options": "i"}},
                 ]
             }
         )
@@ -146,13 +281,15 @@ def build_admin_filter(q="", date_from="", date_to="", status=""):
     elif status == "checked_out":
         filters.append({"check_out": {"$ne": None}})
 
-    if not filters:
-        return {}
+    if site_slug:
+        site = get_site_by_slug(site_slug, active_only=False)
+        if site:
+            filters.append(site_visitor_filter(site))
+        else:
+            # Invalid site filter should return no records.
+            filters.append({"_id": {"$exists": False}})
 
-    if len(filters) == 1:
-        return filters[0]
-
-    return {"$and": filters}
+    return combine_filters(*filters)
 
 
 @app.context_processor
@@ -165,8 +302,19 @@ def inject_helpers():
 # ---------------------------------------------------------
 # Visitor check-in
 # ---------------------------------------------------------
-@app.route("/", methods=["GET", "POST"])
-def register():
+@app.route("/", defaults={"site_slug": None}, methods=["GET", "POST"])
+@app.route("/site/<site_slug>", methods=["GET", "POST"])
+def register(site_slug):
+    # Keep the old root URL working, but send it to the correct site URL.
+    if site_slug is None:
+        site = get_current_site()
+        if not site:
+            abort(404)
+        return redirect(url_for("register", site_slug=site["slug"]))
+
+    site = require_public_site(site_slug)
+    current_site = serialize_site(site)
+
     if request.method == "POST":
         company = request.form.get("company", "").strip()
         visitor_name = request.form.get("visitor_name", "").strip()
@@ -178,14 +326,14 @@ def register():
 
         if not company or not visitor_name or not host_name or not purpose:
             flash("Please complete all required fields.", "error")
-            return render_template("register.html")
+            return render_template("register.html", current_site=current_site)
 
         if not safety_agreed:
             flash(
                 "You must agree to the Safety Guidelines before check-in.",
                 "error",
             )
-            return render_template("register.html")
+            return render_template("register.html", current_site=current_site)
 
         now = datetime.now()
 
@@ -199,6 +347,8 @@ def register():
                     "purpose": purpose,
                     "comment": comment,
                     "safety_agreed": True,
+                    "site_slug": site["slug"],
+                    "site_name": site["name"],
                     "check_in": now,
                     "check_out": None,
                 }
@@ -206,31 +356,49 @@ def register():
         except PyMongoError as exc:
             app.logger.exception("MongoDB insert failed")
             flash(f"Could not save the visitor record: {exc}", "error")
-            return render_template("register.html")
+            return render_template("register.html", current_site=current_site)
 
         return render_template(
             "checkin_success.html",
             visitor_name=visitor_name,
             check_in=now.strftime("%Y-%m-%d %H:%M"),
+            current_site=current_site,
+            site_name=site["name"],
+            site_slug=site["slug"],
         )
 
-    return render_template("register.html")
+    return render_template("register.html", current_site=current_site)
 
 
 # ---------------------------------------------------------
 # Visitor self-service check-out
 # ---------------------------------------------------------
-@app.route("/checkout", methods=["GET", "POST"])
-def visitor_checkout():
+@app.route("/checkout", defaults={"site_slug": None}, methods=["GET", "POST"])
+@app.route("/site/<site_slug>/checkout", methods=["GET", "POST"])
+def visitor_checkout(site_slug):
+    if site_slug is None:
+        site = get_current_site()
+        if not site:
+            abort(404)
+        return redirect(url_for("visitor_checkout", site_slug=site["slug"]))
+
+    site = require_public_site(site_slug)
+    current_site = serialize_site(site)
     query = request.form.get("query", "").strip() if request.method == "POST" else ""
 
-    mongo_filter = {"check_out": None}
+    filters = [{"check_out": None}, site_visitor_filter(site)]
 
     if query:
-        mongo_filter["$or"] = [
-            {"visitor_name": {"$regex": query, "$options": "i"}},
-            {"company": {"$regex": query, "$options": "i"}},
-        ]
+        filters.append(
+            {
+                "$or": [
+                    {"visitor_name": {"$regex": query, "$options": "i"}},
+                    {"company": {"$regex": query, "$options": "i"}},
+                ]
+            }
+        )
+
+    mongo_filter = combine_filters(*filters)
 
     try:
         docs = list(
@@ -252,50 +420,73 @@ def visitor_checkout():
         "visitor_checkout.html",
         results=results,
         query=query,
+        current_site=current_site,
     )
 
 
-@app.post("/checkout/confirm/<visitor_id>")
-def visitor_checkout_confirm(visitor_id):
+@app.post("/checkout/confirm/<visitor_id>", defaults={"site_slug": None})
+@app.post("/site/<site_slug>/checkout/confirm/<visitor_id>")
+def visitor_checkout_confirm(visitor_id, site_slug):
+    if site_slug is None:
+        site = get_current_site()
+    else:
+        site = get_site_by_slug(site_slug, active_only=True)
+
+    if not site:
+        abort(404)
+
+    session["last_site_slug"] = site["slug"]
+    current_site = serialize_site(site)
     object_id = to_object_id(visitor_id)
 
     if not object_id:
         flash("Invalid visitor record.", "error")
-        return redirect(url_for("visitor_checkout"))
+        return redirect(url_for("visitor_checkout", site_slug=site["slug"]))
+
+    visitor_filter = combine_filters(
+        {"_id": object_id, "check_out": None},
+        site_visitor_filter(site),
+    )
 
     try:
-        visitor = visitors_collection.find_one({"_id": object_id, "check_out": None})
+        visitor = visitors_collection.find_one(visitor_filter)
 
         if not visitor:
             flash(
-                "This visitor has already checked out or the record was not found.",
+                "This visitor has already checked out, belongs to another site, or was not found.",
                 "error",
             )
-            return redirect(url_for("visitor_checkout"))
+            return redirect(url_for("visitor_checkout", site_slug=site["slug"]))
 
         now = datetime.now()
         checkout_comment = request.form.get("checkout_comment", "").strip()[:1000]
 
         result = visitors_collection.update_one(
-            {"_id": object_id, "check_out": None},
-            {"$set": {
-                "check_out": now,
-                "checkout_comment": checkout_comment,
-            }},
+            visitor_filter,
+            {
+                "$set": {
+                    "check_out": now,
+                    "checkout_comment": checkout_comment,
+                }
+            },
         )
+
         if not result.modified_count:
             flash("This visitor has already checked out.", "error")
-            return redirect(url_for("visitor_checkout"))
+            return redirect(url_for("visitor_checkout", site_slug=site["slug"]))
     except PyMongoError as exc:
         app.logger.exception("MongoDB checkout update failed")
         flash(f"Could not complete check-out: {exc}", "error")
-        return redirect(url_for("visitor_checkout"))
+        return redirect(url_for("visitor_checkout", site_slug=site["slug"]))
 
     return render_template(
         "checkout_success.html",
         visitor_name=visitor.get("visitor_name", ""),
         company=visitor.get("company", ""),
         check_out=now.strftime("%Y-%m-%d %H:%M"),
+        current_site=current_site,
+        site_name=site["name"],
+        site_slug=site["slug"],
     )
 
 
@@ -318,8 +509,90 @@ def admin_login():
 
 @app.route("/admin/logout")
 def admin_logout():
+    # Keep the last-site selection for the kiosk redirect after logout.
+    last_site_slug = session.get("last_site_slug")
     session.clear()
+    if last_site_slug:
+        session["last_site_slug"] = last_site_slug
     return redirect(url_for("admin_login"))
+
+
+# ---------------------------------------------------------
+# Admin site management
+# ---------------------------------------------------------
+@app.post("/admin/sites/add")
+def admin_add_site():
+    if not admin_required():
+        return redirect(url_for("admin_login"))
+
+    name = request.form.get("site_name", "").strip()
+    requested_slug = request.form.get("site_slug", "").strip()
+    slug = slugify_site(requested_slug or name)
+
+    if not name:
+        flash("Site name is required.", "error")
+        return redirect(url_for("admin"))
+
+    if not slug:
+        flash("Enter an English URL Name, for example: yard-3.", "error")
+        return redirect(url_for("admin"))
+
+    if sites_collection.find_one({"slug": slug}):
+        flash("That Site URL already exists. Please use a different URL Name.", "error")
+        return redirect(url_for("admin"))
+
+    try:
+        sites_collection.insert_one(
+            {
+                "name": name,
+                "slug": slug,
+                "active": True,
+                "created_at": datetime.now(),
+            }
+        )
+        flash(f"Site added: {name}", "success")
+    except PyMongoError as exc:
+        app.logger.exception("MongoDB site insert failed")
+        flash(f"Could not add the site: {exc}", "error")
+
+    return redirect(url_for("admin"))
+
+
+@app.post("/admin/sites/<site_id>/toggle")
+def admin_toggle_site(site_id):
+    if not admin_required():
+        return redirect(url_for("admin_login"))
+
+    object_id = to_object_id(site_id)
+    if not object_id:
+        flash("Invalid site.", "error")
+        return redirect(url_for("admin"))
+
+    site = sites_collection.find_one({"_id": object_id})
+    if not site:
+        flash("Site not found.", "error")
+        return redirect(url_for("admin"))
+
+    new_active = not bool(site.get("active", True))
+
+    if not new_active:
+        active_count = sites_collection.count_documents({"active": True})
+        if active_count <= 1:
+            flash("At least one site must remain active.", "error")
+            return redirect(url_for("admin"))
+
+    try:
+        sites_collection.update_one(
+            {"_id": object_id},
+            {"$set": {"active": new_active}},
+        )
+        state = "activated" if new_active else "deactivated"
+        flash(f"{site.get('name', 'Site')} {state}.", "success")
+    except PyMongoError as exc:
+        app.logger.exception("MongoDB site toggle failed")
+        flash(f"Could not update the site: {exc}", "error")
+
+    return redirect(url_for("admin"))
 
 
 # ---------------------------------------------------------
@@ -330,12 +603,21 @@ def admin():
     if not admin_required():
         return redirect(url_for("admin_login"))
 
+    ensure_default_site()
+
     q = request.args.get("q", "").strip()
     date_from = request.args.get("date_from", "").strip()
     date_to = request.args.get("date_to", "").strip()
     status = request.args.get("status", "").strip()
+    site_slug = request.args.get("site", "").strip()
 
-    mongo_filter = build_admin_filter(q, date_from, date_to, status)
+    mongo_filter = build_admin_filter(
+        q=q,
+        date_from=date_from,
+        date_to=date_to,
+        status=status,
+        site_slug=site_slug,
+    )
 
     try:
         docs = list(
@@ -343,20 +625,25 @@ def admin():
             .sort("check_in", DESCENDING)
             .limit(1000)
         )
+        site_docs = list(sites_collection.find().sort([("active", DESCENDING), ("name", ASCENDING)]))
     except PyMongoError as exc:
         app.logger.exception("MongoDB admin query failed")
-        flash(f"Could not load visitor records: {exc}", "error")
+        flash(f"Could not load records: {exc}", "error")
         docs = []
+        site_docs = []
 
     visitors = [serialize_visitor(doc) for doc in docs]
+    sites = [serialize_site(doc) for doc in site_docs]
 
     return render_template(
         "admin.html",
         visitors=visitors,
+        sites=sites,
         q=q,
         date_from=date_from,
         date_to=date_to,
         status=status,
+        selected_site=site_slug,
     )
 
 
@@ -401,8 +688,15 @@ def export_excel():
     date_from = request.args.get("date_from", "").strip()
     date_to = request.args.get("date_to", "").strip()
     status = request.args.get("status", "").strip()
+    site_slug = request.args.get("site", "").strip()
 
-    mongo_filter = build_admin_filter(q, date_from, date_to, status)
+    mongo_filter = build_admin_filter(
+        q=q,
+        date_from=date_from,
+        date_to=date_to,
+        status=status,
+        site_slug=site_slug,
+    )
 
     try:
         docs = list(visitors_collection.find(mongo_filter).sort("check_in", DESCENDING))
@@ -417,6 +711,7 @@ def export_excel():
 
     headers = [
         "ID",
+        "Site",
         "Company",
         "Visitor Name",
         "Host Name",
@@ -441,6 +736,7 @@ def export_excel():
         ws.append(
             [
                 str(doc["_id"]),
+                doc.get("site_name") or DEFAULT_SITE_NAME,
                 doc.get("company", ""),
                 doc.get("visitor_name", ""),
                 doc.get("host_name", ""),
@@ -459,17 +755,18 @@ def export_excel():
     widths = {
         "A": 26,
         "B": 24,
-        "C": 22,
+        "C": 24,
         "D": 22,
-        "E": 18,
-        "F": 24,
-        "G": 36,
-        "H": 40,
-        "I": 16,
+        "E": 22,
+        "F": 18,
+        "G": 24,
+        "H": 36,
+        "I": 40,
         "J": 16,
         "K": 16,
         "L": 16,
         "M": 16,
+        "N": 16,
     }
 
     for col, width in widths.items():
@@ -496,9 +793,11 @@ if __name__ == "__main__":
     try:
         verify_mongodb()
         ensure_indexes()
+        ensure_default_site()
         print("MongoDB connection: OK")
         print(f"Database: {MONGO_DB_NAME}")
         print(f"Collection: {MONGO_COLLECTION_NAME}")
+        print("Sites collection: sites")
     except Exception as exc:
         print("\nMongoDB connection failed.")
         print(exc)
