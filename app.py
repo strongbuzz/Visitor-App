@@ -233,7 +233,8 @@ def serialize_visitor(doc):
         "purpose": doc.get("purpose", ""),
         "comment": doc.get("comment", ""),
         "checkout_comment": doc.get("checkout_comment", ""),
-        "safety_agreed": bool(doc.get("safety_agreed", False)),
+        "safety_agreed": doc.get("safety_agreed") if "safety_agreed" in doc else None,
+        "photo_policy_agreed": doc.get("photo_policy_agreed") if "photo_policy_agreed" in doc else None,
         "site_slug": site_slug,
         "site_name": site_name,
         "check_in": doc.get("check_in"),
@@ -323,6 +324,7 @@ def register(site_slug):
         purpose = request.form.get("purpose", "").strip()
         comment = request.form.get("comment", "").strip()
         safety_agreed = request.form.get("safety_agreed") == "on"
+        photo_policy_agreed = request.form.get("photo_policy_agreed") == "on"
 
         if not company or not visitor_name or not host_name or not purpose:
             flash("Please complete all required fields.", "error")
@@ -331,6 +333,13 @@ def register(site_slug):
         if not safety_agreed:
             flash(
                 "You must agree to the Safety Guidelines before check-in.",
+                "error",
+            )
+            return render_template("register.html", current_site=current_site)
+
+        if not photo_policy_agreed:
+            flash(
+                "You must agree to the Photography & Recording Policy before check-in.",
                 "error",
             )
             return render_template("register.html", current_site=current_site)
@@ -347,6 +356,7 @@ def register(site_slug):
                     "purpose": purpose,
                     "comment": comment,
                     "safety_agreed": True,
+                    "photo_policy_agreed": True,
                     "site_slug": site["slug"],
                     "site_name": site["name"],
                     "check_in": now,
@@ -719,11 +729,12 @@ def export_excel():
         "Purpose",
         "Comment",
         "Check Out Comment / Issue",
-        "Safety Agreed",
         "Check In Date",
         "Check In Time",
         "Check Out Date",
         "Check Out Time",
+        "Safety Agreed",
+        "Photography / Recording Policy Agreed",
     ]
     ws.append(headers)
 
@@ -744,11 +755,12 @@ def export_excel():
                 doc.get("purpose", ""),
                 doc.get("comment", ""),
                 doc.get("checkout_comment", ""),
-                "Yes" if doc.get("safety_agreed") else "No",
                 export_date(doc.get("check_in")),
                 export_time(doc.get("check_in")),
                 export_date(doc.get("check_out")),
                 export_time(doc.get("check_out")),
+                "Yes" if doc.get("safety_agreed") is True else ("No" if doc.get("safety_agreed") is False else "-"),
+                "Yes" if doc.get("photo_policy_agreed") is True else ("No" if doc.get("photo_policy_agreed") is False else "-"),
             ]
         )
 
@@ -766,7 +778,8 @@ def export_excel():
         "K": 16,
         "L": 16,
         "M": 16,
-        "N": 16,
+        "N": 18,
+        "O": 34,
     }
 
     for col, width in widths.items():

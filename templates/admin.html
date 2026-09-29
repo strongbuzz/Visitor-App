@@ -116,10 +116,10 @@
     </div>
 
     <div class="overflow-x-auto">
-      <table class="min-w-[1280px] w-full border-collapse text-left text-sm">
+      <table class="min-w-[1500px] w-full border-collapse text-left text-sm">
         <thead class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
           <tr>
-            {% for h in ['Site','Company','Visitor','Comment','Check Out Issue','Host','Host Phone','Purpose','Check In','Check Out','Status','Action'] %}
+            {% for h in ['Site','Company','Visitor','Comment','Check Out Issue','Host','Host Phone','Purpose','Check In','Check Out','Status','Safety Agree','Photo / Recording Agree','Action'] %}
             <th class="whitespace-nowrap border-b border-slate-200 px-4 py-4 font-bold">{{ h }}</th>
             {% endfor %}
           </tr>
@@ -145,6 +145,12 @@
                 <span class="whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">Inside</span>
               {% endif %}
             </td>
+            <td class="whitespace-nowrap px-4 py-4 text-center">
+              {% if v.safety_agreed is sameas true %}<span class="font-bold text-emerald-700">Yes</span>{% elif v.safety_agreed is sameas false %}<span class="font-bold text-rose-700">No</span>{% else %}<span class="text-slate-400">—</span>{% endif %}
+            </td>
+            <td class="whitespace-nowrap px-4 py-4 text-center">
+              {% if v.photo_policy_agreed is sameas true %}<span class="font-bold text-emerald-700">Yes</span>{% elif v.photo_policy_agreed is sameas false %}<span class="font-bold text-rose-700">No</span>{% else %}<span class="text-slate-400">—</span>{% endif %}
+            </td>
             <td class="px-4 py-4">
               {% if not v.check_out %}
               <form method="post" action="{{ url_for('admin_checkout', visitor_id=v.id) }}" onsubmit="return confirm('Check this visitor out now?');">
@@ -154,7 +160,7 @@
             </td>
           </tr>
         {% else %}
-          <tr><td class="px-4 py-12 text-center text-slate-500" colspan="12">No records found.</td></tr>
+          <tr><td class="px-4 py-12 text-center text-slate-500" colspan="14">No records found.</td></tr>
         {% endfor %}
         </tbody>
       </table>
