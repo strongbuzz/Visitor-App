@@ -31,6 +31,9 @@
   </div>
 </section>
 <script>
-  window.setTimeout(() => { window.location.href = {{ url_for('register')|tojson }}; }, 10000);
+  // No success-page sound. Sound plays on button press in visitor.js only.
+  window.setTimeout(function () {
+    window.location.href = {{ url_for('register')|tojson }};
+  }, 10000);
 </script>
 {% endblock %}

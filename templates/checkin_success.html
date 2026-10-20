@@ -28,7 +28,9 @@
   </div>
 </section>
 <script>
-  // Preserve the original 10-second automatic return.
-  setTimeout(() => { window.location.href = {{ url_for('register')|tojson }}; }, 10000);
+  // No success-page sound. Sound plays on button press in visitor.js only.
+  setTimeout(function () {
+    window.location.href = {{ url_for('register')|tojson }};
+  }, 10000);
 </script>
 {% endblock %}

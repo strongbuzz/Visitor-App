@@ -132,7 +132,7 @@ You should see a document similar to:
   "company": "ABC",
   "visitor_name": "John Kim",
   "host_name": "Jinwoo Lee",
-  "host_phone": "480-555-1234",
+  "visitor_phone": "480-555-1234",
   "purpose": "Yard Visit",
   "comment": "",
   "safety_agreed": true,

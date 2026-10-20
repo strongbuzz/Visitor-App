@@ -229,12 +229,14 @@ def serialize_visitor(doc):
         "company": doc.get("company", ""),
         "visitor_name": doc.get("visitor_name", ""),
         "host_name": doc.get("host_name", ""),
-        "host_phone": doc.get("host_phone", ""),
+        "visitor_phone": doc.get("visitor_phone", ""),
         "purpose": doc.get("purpose", ""),
         "comment": doc.get("comment", ""),
         "checkout_comment": doc.get("checkout_comment", ""),
         "safety_agreed": doc.get("safety_agreed") if "safety_agreed" in doc else None,
-        "photo_policy_agreed": doc.get("photo_policy_agreed") if "photo_policy_agreed" in doc else None,
+        "photo_policy_agreed": (
+            doc.get("photo_policy_agreed") if "photo_policy_agreed" in doc else None
+        ),
         "site_slug": site_slug,
         "site_name": site_name,
         "check_in": doc.get("check_in"),
@@ -254,7 +256,7 @@ def build_admin_filter(q="", date_from="", date_to="", status="", site_slug=""):
                     {"company": {"$regex": q, "$options": "i"}},
                     {"visitor_name": {"$regex": q, "$options": "i"}},
                     {"host_name": {"$regex": q, "$options": "i"}},
-                    {"host_phone": {"$regex": q, "$options": "i"}},
+                    {"visitor_phone": {"$regex": q, "$options": "i"}},
                     {"purpose": {"$regex": q, "$options": "i"}},
                     {"comment": {"$regex": q, "$options": "i"}},
                     {"checkout_comment": {"$regex": q, "$options": "i"}},
@@ -320,7 +322,7 @@ def register(site_slug):
         company = request.form.get("company", "").strip()
         visitor_name = request.form.get("visitor_name", "").strip()
         host_name = request.form.get("host_name", "").strip()
-        host_phone = request.form.get("host_phone", "").strip()
+        visitor_phone = request.form.get("visitor_phone", "").strip()
         purpose = request.form.get("purpose", "").strip()
         comment = request.form.get("comment", "").strip()
         safety_agreed = request.form.get("safety_agreed") == "on"
@@ -352,7 +354,7 @@ def register(site_slug):
                     "company": company,
                     "visitor_name": visitor_name,
                     "host_name": host_name,
-                    "host_phone": host_phone,
+                    "visitor_phone": visitor_phone,
                     "purpose": purpose,
                     "comment": comment,
                     "safety_agreed": True,
@@ -635,7 +637,9 @@ def admin():
             .sort("check_in", DESCENDING)
             .limit(1000)
         )
-        site_docs = list(sites_collection.find().sort([("active", DESCENDING), ("name", ASCENDING)]))
+        site_docs = list(
+            sites_collection.find().sort([("active", DESCENDING), ("name", ASCENDING)])
+        )
     except PyMongoError as exc:
         app.logger.exception("MongoDB admin query failed")
         flash(f"Could not load records: {exc}", "error")
@@ -724,8 +728,8 @@ def export_excel():
         "Site",
         "Company",
         "Visitor Name",
+        "Visitor Phone",
         "Host Name",
-        "Host Phone",
         "Purpose",
         "Comment",
         "Check Out Comment / Issue",
@@ -751,7 +755,7 @@ def export_excel():
                 doc.get("company", ""),
                 doc.get("visitor_name", ""),
                 doc.get("host_name", ""),
-                doc.get("host_phone", ""),
+                doc.get("visitor_phone", ""),
                 doc.get("purpose", ""),
                 doc.get("comment", ""),
                 doc.get("checkout_comment", ""),
@@ -759,8 +763,16 @@ def export_excel():
                 export_time(doc.get("check_in")),
                 export_date(doc.get("check_out")),
                 export_time(doc.get("check_out")),
-                "Yes" if doc.get("safety_agreed") is True else ("No" if doc.get("safety_agreed") is False else "-"),
-                "Yes" if doc.get("photo_policy_agreed") is True else ("No" if doc.get("photo_policy_agreed") is False else "-"),
+                (
+                    "Yes"
+                    if doc.get("safety_agreed") is True
+                    else ("No" if doc.get("safety_agreed") is False else "-")
+                ),
+                (
+                    "Yes"
+                    if doc.get("photo_policy_agreed") is True
+                    else ("No" if doc.get("photo_policy_agreed") is False else "-")
+                ),
             ]
         )
 

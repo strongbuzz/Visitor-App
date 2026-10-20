@@ -678,3 +678,43 @@ html.lenis, html.lenis body { height: auto; }
     will-change: auto !important;
   }
 }
+
+
+/* Visit page header: keep Check In / Check Out toggle at the same height */
+.premium-ui #app-main > .visit-page-header {
+  margin-bottom: 31px;
+  gap: 26px;
+  align-items: flex-end;
+  min-height: 132px;
+}
+.premium-ui #app-main > .visit-page-header .visit-page-copy {
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.premium-ui #app-main > .visit-page-header .visit-switch {
+  width: 300px;
+  max-width: 100%;
+  height: 51px;
+  min-height: 51px;
+  margin-bottom: 0 !important;
+}
+.premium-ui #app-main > .visit-page-header .visit-tab {
+  min-height: 41px;
+  height: 100%;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+@media (max-width: 640px) {
+  .premium-ui #app-main > .visit-page-header {
+    min-height: 0;
+    align-items: stretch;
+  }
+  .premium-ui #app-main > .visit-page-header .visit-page-copy {
+    min-height: 0;
+  }
+  .premium-ui #app-main > .visit-page-header .visit-switch {
+    width: 100%;
+  }
+}
