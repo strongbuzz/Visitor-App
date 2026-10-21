@@ -153,11 +153,11 @@
             <td class="whitespace-nowrap px-4 py-4 font-semibold text-slate-700">{{ v.site_name }}</td>
             <td class="px-4 py-4">{{ v.company }}</td>
             <td class="whitespace-nowrap px-4 py-4 font-bold text-slate-900">{{ v.visitor_name }}</td>
+            <td class="whitespace-nowrap px-4 py-4">{{ v.visitor_phone or '-' }}</td>
             <td class="max-w-[250px] break-words px-4 py-4 text-slate-600">{{ v.comment or '-' }}</td>
             <td class="max-w-[260px] whitespace-pre-wrap break-words px-4 py-4 text-slate-600">{{ v.checkout_comment or
               '-' }}</td>
             <td class="px-4 py-4">{{ v.host_name }}</td>
-            <td class="whitespace-nowrap px-4 py-4">{{ v.visitor_phone or '-' }}</td>
             <td class="px-4 py-4">{{ v.purpose }}</td>
             <td class="whitespace-nowrap px-4 py-4 text-slate-600">{{ v.check_in_display }}</td>
             <td class="whitespace-nowrap px-4 py-4 text-slate-600">{{ v.check_out_display }}</td>
